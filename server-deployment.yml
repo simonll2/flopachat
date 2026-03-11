@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      initContainers:
+        - name: wait-for-mongo
+          image: busybox
+          command: ['sh', '-c', 'until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done;']
+      containers:
+        - name: server
+          image: devbsamy/server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/flopachat"
+          command: ["node", "server.js"]
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10

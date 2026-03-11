@@ -1,0 +1,60 @@
+#################################################################################################
+#                                                                                               #
+#    Important, pour les requêtes avec la propriété Authorization, il faut remplacer {token}    #
+#    par le token reçu lors de la requête pour se connecter à un compte existant                #        
+#                                                                                               #
+#################################################################################################
+
+# Requête pour se créer un compte :
+
+POST http://server-service.info/api/register
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "test",
+    "firstName": "John",
+    "lastName": "Doe",
+    "address": {
+        "street": "123 Main St",
+        "city": "Anytown",
+        "state": "Anystate",
+        "postalCode": "12345",
+        "country": "Anyland"
+    }
+}
+
+###################################################################
+
+# Requête pour se connecter :
+POST http://server-service.info/api/login
+Content-Type: application/json
+
+{
+    "email": "admin@admin.com",
+    "password": "admin"
+}
+
+###################################################################
+GET http://server-service.info/api/users/{userId}
+Authorization: Bearer {token}
+
+###################################################################
+
+# Requête pour supprimer un compte existant, remplacez {userId} par l'id du compte à supprimer :
+DELETE http://server-service.info/api/users/{userId}
+Authorization: Bearer {token}
+
+###################################################################
+GET http://server-service.info/api/cart
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjUwZWJkZjQ5Yjc4YzRkMDAyNDAyNjkiLCJlbWFpbCI6InNpbW9uYS5sZWxsb3VjaGVAb3V0bG9vay5mciIsImlhdCI6MTcxNjU4NDk1NiwiZXhwIjoxNzQ4MTQyNTU2fQ.KdV-_c4kQ73NhbhUse6DASwnm03m2z-tBatpsa-lVko
+
+###
+PUT http://server-service.info/api/cart
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjUwZWJkZjQ5Yjc4YzRkMDAyNDAyNjkiLCJlbWFpbCI6InNpbW9uYS5sZWxsb3VjaGVAb3V0bG9vay5mciIsImlhdCI6MTcxNjU4NDk1NiwiZXhwIjoxNzQ4MTQyNTU2fQ.KdV-_c4kQ73NhbhUse6DASwnm03m2z-tBatpsa-lVko
+
+{
+    "productId": "6650f1829559ca0d6e8384ea",
+    "quantity": 1
+}
