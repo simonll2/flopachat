@@ -7,7 +7,7 @@ const stripePromise = loadStripe(
   "pk_test_51PK9Z7FuOuEKM0JlpqImNwZDlSEVLgPIKmu4ug9iEBhmFlYy6daHz0seLnLX0GSvTjRjR35YOLu5ReEZLHpQGU9Y00YITkJNm9"
 );
 
-const API_URL = "http://server-service.info/api";
+const API_URL = "/api";
 
 class PaymentService {
   async createCheckoutSession(items) {

@@ -115,7 +115,7 @@ export default {
       },
       image: null,
       imagePreview: null,
-      defaultImage: "http://server-service.info/static/users/default-user.jpg",
+      defaultImage: "/static/users/default-user.jpg",
       errorMessage: "", // Ajout de la variable pour le message d'erreur
     };
   },

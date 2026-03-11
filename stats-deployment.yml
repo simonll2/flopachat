@@ -1,43 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: server
+  name: stats-service
   namespace: flopachat
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: server
+      app: stats-service
   template:
     metadata:
       labels:
-        app: server
+        app: stats-service
     spec:
       initContainers:
         - name: wait-for-mongo
           image: busybox
           command: ['sh', '-c', 'until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done;']
       containers:
-        - name: server
-          image: devbsamy/server:v1.0
+        - name: stats-service
+          image: devbsamy/stats-service:v1.0
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 5000
+            - containerPort: 4000
           envFrom:
             - secretRef:
                 name: app-secrets
-          env:
-            - name: STATS_SERVICE_URL
-              value: "http://stats-service:4000"
           readinessProbe:
-            tcpSocket:
-              port: 5000
+            httpGet:
+              path: /health
+              port: 4000
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /health
-              port: 5000
+              port: 4000
             initialDelaySeconds: 10
             periodSeconds: 30
           resources:
@@ -47,10 +45,3 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
-          volumeMounts:
-            - name: static-storage
-              mountPath: /app/static
-      volumes:
-        - name: static-storage
-          persistentVolumeClaim:
-            claimName: server-static-pvc

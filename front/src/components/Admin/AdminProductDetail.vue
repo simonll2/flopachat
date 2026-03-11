@@ -3,7 +3,7 @@
     <div class="row g-5">
       <div class="col-lg-6">
         <div class="card shadow-sm">
-          <img :src="'http://server-service.info' + product.imagePath" alt="Product Image" class="card-img-top img-fluid" />
+          <img :src="'' + product.imagePath" alt="Product Image" class="card-img-top img-fluid" />
         </div>
       </div>
       <div class="col-lg-6">

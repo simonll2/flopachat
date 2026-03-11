@@ -123,7 +123,7 @@ export default {
       },
       imageFile: null,
       imagePreview: null,
-      defaultImage: "http://server-service.info/static/users/default-user.jpg",
+      defaultImage: "/static/users/default-user.jpg",
       error: null,
     };
   },

@@ -39,8 +39,8 @@ export default {
     },
     getImageSrc(imagePath) {
       return imagePath
-        ? `http://server-service.info${imagePath}`
-        : `http://server-service.info/static/products/default-product.jpg`;
+        ? `${imagePath}`
+        : `/static/products/default-product.jpg`;
     },
   },
 };

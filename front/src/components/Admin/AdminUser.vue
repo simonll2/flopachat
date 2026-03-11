@@ -40,7 +40,7 @@ export default {
   methods: {
     ...mapActions("auth", ["deleteUser"]),
     getImageSrc(imagePath) {
-      return imagePath ? `http://server-service.info${imagePath}` : `http://server-service.info/static/users/default-user.jpg`;
+      return imagePath ? `${imagePath}` : `/static/users/default-user.jpg`;
     },
     async deleteUserHandler() {
       try {

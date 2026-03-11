@@ -142,8 +142,8 @@ export default {
     },
     getImageSrc() {
       return this.form.imagePath
-        ? `http://server-service.info${this.form.imagePath}`
-        : `http://server-service.info/static/users/default-user.jpg`;
+        ? `${this.form.imagePath}`
+        : `/static/users/default-user.jpg`;
     },
     async updateProfile() {
       const formData = new FormData();
