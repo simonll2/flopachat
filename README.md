@@ -47,48 +47,120 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 - [Minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-## Deploiement
+---
 
-### 1. Demarrer Minikube
+## Installation sur Linux natif
+
+### 1. Installer les dependances
 
 ```sh
-minikube start
+# Docker
+sudo apt-get update
+sudo apt-get install -y docker.io
+sudo usermod -aG docker $USER
+newgrp docker
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```
+
+### 2. Demarrer Minikube
+
+```sh
+minikube start --driver=docker
 minikube addons enable ingress
 ```
 
-### 2. Construire les images Docker
+### 3. Construire et deployer
 
 ```sh
-# Utiliser le daemon Docker de Minikube (pour eviter de push sur un registry)
 eval $(minikube docker-env)
-
-# Construire les 3 images
 ./build-images.sh
-```
-
-### 3. Deployer sur Kubernetes
-
-```sh
 ./deploy.sh
 ```
 
 ### 4. Configurer l'acces
 
-Ajouter l'entree suivante dans `/etc/hosts` :
-
-```
-<minikube-ip> marketplace.local
-```
-
-Pour obtenir l'IP de Minikube :
-
 ```sh
-minikube ip
+# Ajouter marketplace.local dans /etc/hosts
+echo "$(minikube ip) marketplace.local" | sudo tee -a /etc/hosts
 ```
 
 ### 5. Acceder a l'application
 
 Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur.
+
+---
+
+## Installation sur WSL2 (Windows)
+
+> WSL2 utilise un reseau virtuel interne. `minikube ip` retourne une IP accessible uniquement depuis WSL, pas depuis le navigateur Windows. Il faut donc utiliser `minikube tunnel`.
+
+### 1. Prerequis cote Windows
+
+- **WSL2** active avec une distribution Ubuntu (22.04+)
+- **Docker Desktop** installe et configure pour utiliser le backend WSL2
+  - Dans Docker Desktop : Settings → Resources → WSL Integration → activer pour votre distribution
+
+### 2. Installer kubectl et Minikube dans WSL
+
+```sh
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```
+
+### 3. Demarrer Minikube
+
+```sh
+minikube start --driver=docker
+minikube addons enable ingress
+```
+
+### 4. Construire et deployer
+
+```sh
+eval $(minikube docker-env)
+./build-images.sh
+./deploy.sh
+```
+
+### 5. Lancer le tunnel (specifique WSL2)
+
+Dans un terminal WSL dedie (a laisser ouvert) :
+
+```sh
+minikube tunnel
+```
+
+> Cela expose les services Ingress sur `127.0.0.1` dans WSL, qui est aussi accessible depuis Windows.
+
+### 6. Configurer l'acces
+
+Editer le fichier hosts **cote Windows** (`C:\Windows\System32\drivers\etc\hosts`) en tant qu'administrateur et ajouter :
+
+```
+127.0.0.1 marketplace.local
+```
+
+> **Note :** avec `minikube tunnel`, l'IP est toujours `127.0.0.1`, pas celle retournee par `minikube ip`.
+
+### 7. Acceder a l'application
+
+Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur Windows.
+
+---
+
+## Informations communes
 
 **Compte admin par defaut :** `admin@admin.com` / `admin`
 
@@ -151,8 +223,11 @@ kubectl get svc -n flopachat
 # Verifier l'ingress
 kubectl get ingress -n flopachat
 
-# Supprimer le deploiement
-kubectl delete namespace flopachat
+# Arreter tous les pods (sans supprimer les donnees)
+./stop.sh
+
+# Supprimer tout (namespace, images Docker, donnees)
+./cleanup.sh
 ```
 
 ## Structure du projet
@@ -162,6 +237,8 @@ kubectl delete namespace flopachat
 ├── k8s-secrets.yml            # Secrets (credentials)
 ├── deploy.sh                  # Script de deploiement
 ├── build-images.sh            # Script de build des images
+├── stop.sh                    # Arret des pods (donnees conservees)
+├── cleanup.sh                 # Suppression complete (namespace + images)
 ├── network-policy.yml         # NetworkPolicy MongoDB
 ├── mongo-pvc.yml              # PVC pour MongoDB
 ├── server-pvc.yml             # PVC pour fichiers uploades
