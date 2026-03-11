@@ -37,7 +37,7 @@ const paymentRouter = require("./routes/paymentRoute");
 
 // Middlewares globaux
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+  origin: process.env.CORS_ORIGIN || 'http://marketplace.local',
   credentials: true
 }));
 app.use(express.json());

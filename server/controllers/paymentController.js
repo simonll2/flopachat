@@ -29,8 +29,8 @@ const createCheckoutSession = async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: "http://localhost:8080/success?session_id={CHECKOUT_SESSION_ID}", // Replace with your success URL
-      cancel_url: "http://localhost:8080/cancel", // Replace with your cancel URL
+      success_url: `${process.env.CORS_ORIGIN || 'http://marketplace.local'}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CORS_ORIGIN || 'http://marketplace.local'}/cancel`,
     });
 
     res.json({ id: session.id });
