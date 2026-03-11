@@ -5,7 +5,7 @@
       <div id="carouselExampleIndicators" class="carousel slide mb-4" data-bs-ride="carousel" data-bs-interval="2000">
         <div class="carousel-inner">
           <div class="carousel-item active">
-            <img src="http://server-service.info/static/carousel/1.png" class="d-block w-100" alt="Image 1" />
+            <img src="/static/carousel/1.png" class="d-block w-100" alt="Image 1" />
           </div>
         </div>
       </div>

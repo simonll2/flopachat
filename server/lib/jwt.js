@@ -1,6 +1,6 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
-const jwtSecret = process.env.JWT_SECRET || "jsonwebtokenexpressjsmongodbvuejsgroupe7boutiqueelectronique";
+const jwtSecret = process.env.JWT_SECRET;
 
 function createToken(user) {
   const token = jwt.sign(
@@ -11,7 +11,7 @@ function createToken(user) {
     },
     jwtSecret,
     {
-      expiresIn: "1y",
+      expiresIn: "7d",
       algorithm: "HS256",
     }
   );

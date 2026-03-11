@@ -2,7 +2,7 @@
 import axios from "axios";
 import { getToken } from "../utils/auth";
 
-const API_URL = "http://server-service.info/api";
+const API_URL = "/api";
 
 class OrderService {
   async getAllOrders() {

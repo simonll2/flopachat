@@ -2,11 +2,27 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: app-ingress
+  namespace: flopachat
 spec:
+  ingressClassName: nginx
   rules:
-    - host: marketplace.info
+    - host: marketplace.local
       http:
         paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: server-service
+                port:
+                  number: 5000
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: server-service
+                port:
+                  number: 5000
           - path: /
             pathType: Prefix
             backend:
@@ -14,13 +30,3 @@ spec:
                 name: front-service
                 port:
                   number: 80
-    - host: server-service.info
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: server-service
-                port:
-                  number: 8080

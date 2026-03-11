@@ -4,7 +4,7 @@
       <div class="col-lg-6">
         <div class="card shadow-sm">
           <img
-            :src="'http://server-service.info' + productDetails.imagePath"
+            :src="'' + productDetails.imagePath"
             alt="Product Image"
             class="card-img-top img-fluid"
           />

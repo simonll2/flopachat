@@ -24,7 +24,7 @@
             :key="product._id"
             @click="selectProduct(product)"
           >
-            <img :src="'http://server-service.info' + product.imagePath" alt="Product Image" class="product-thumbnail" />
+            <img :src="'' + product.imagePath" alt="Product Image" class="product-thumbnail" />
             <div class="product-info">
               <div class="product-name">{{ product.name }}</div>
               <div class="product-price">{{ formatCurrency(product.price) }}</div>

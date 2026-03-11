@@ -76,13 +76,13 @@ export default {
     const bannerImage = computed(() => {
       switch (props.page) {
         case "products":
-          return "http://server-service.info/static/admin/admin.jpg";
+          return "/static/admin/admin.jpg";
         case "orders":
-          return "http://server-service.info/static/admin/jp.jpg";
+          return "/static/admin/jp.jpg";
         case "users":
-          return "http://server-service.info/static/admin/bastos.jpg";
+          return "/static/admin/bastos.jpg";
         default:
-          return "http://server-service.info/static/admin/admin.jpg";
+          return "/static/admin/admin.jpg";
       }
     });
 
