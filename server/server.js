@@ -8,13 +8,25 @@ const path = require("path");
 
 const app = express();
 
-// Vérifier et créer les répertoires si nécessaire
-const directories = ["static", "static/users", "static/products"];
-directories.forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+// Copier les fichiers statiques par défaut vers le PVC si vide
+const { execSync } = require("child_process");
+const staticDir = path.join(__dirname, "static");
+const defaultDir = path.join(__dirname, "static-default");
+
+if (!fs.existsSync(staticDir) || fs.readdirSync(staticDir).length === 0) {
+  console.log("Static directory empty (PVC mount), copying defaults...");
+  fs.mkdirSync(staticDir, { recursive: true });
+  if (fs.existsSync(defaultDir)) {
+    execSync(`cp -r ${defaultDir}/* ${staticDir}/`);
+    console.log("Default static files copied.");
   }
-});
+} else {
+  // S'assurer que les sous-dossiers existent
+  ["users", "products", "carousel", "admin"].forEach((dir) => {
+    const p = path.join(staticDir, dir);
+    if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+  });
+}
 
 // Import des routes
 const userRouter = require("./routes/userRoute");
