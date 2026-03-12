@@ -337,11 +337,14 @@ const seedDatabase = async () => {
             0
           );
           const randomDate = getRandomDate(new Date(new Date().setFullYear(new Date().getFullYear() - 1)), new Date());
+          // Répartition réaliste des statuts : 60% delivered, 30% completed, 10% pending
+          const rand = Math.random();
+          const status = rand < 0.6 ? "delivered" : rand < 0.9 ? "completed" : "pending";
           const order = new Order({
             user: user._id,
             products: orderItems,
             total,
-            status: "completed",
+            status,
             createdAt: randomDate,
           });
           orders.push(order);

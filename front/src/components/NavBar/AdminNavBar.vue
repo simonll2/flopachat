@@ -14,6 +14,9 @@
         <li class="navbar-item">
           <router-link to="/admin/users">Gestion des utilisateurs</router-link>
         </li>
+        <li class="navbar-item">
+          <router-link to="/admin/stats">Statistiques</router-link>
+        </li>
       </ul>
       <div class="dropdown">
         <i

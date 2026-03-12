@@ -172,16 +172,27 @@ Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur W
 - **Commandes** : historique, detail, suivi de statut
 - **Paiement** : integration Stripe (mode test)
 - **Administration** : gestion des produits, utilisateurs, commandes, tableau de bord statistiques
-- **Statistiques** : microservice dedie pour le calcul du chiffre d'affaires et du nombre de commandes
+- **Statistiques** : microservice dedie avec plusieurs endpoints d'agregation MongoDB (CA total, stats mensuelles, top produits, resume enrichi)
 
 ## Architecture microservices
 
 L'application est composee de 2 backends independants :
 
 1. **server** (port 5000) : API principale gerant l'authentification, les produits, le panier, les commandes et le paiement
-2. **stats-service** (port 4000) : microservice dedie aux statistiques, interrogeant directement MongoDB
+2. **stats-service** (port 4000) : microservice dedie aux statistiques, avec pipelines d'agregation MongoDB avances (`$group`, `$unwind`, `$lookup`, `$dateToString`, `$sort`, `$limit`)
 
 Le serveur principal agit comme **proxy** pour les requetes `/api/stats/*`, les transmettant au stats-service via HTTP interne au cluster Kubernetes. Cela demontre la **communication inter-services** au sein du cluster.
+
+### Endpoints du stats-service
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /stats` | Totaux globaux (CA et nombre de commandes livrees) |
+| `GET /stats/summary` | Resume enrichi : CA, commandes livrees, panier moyen, repartition par statut |
+| `GET /stats/monthly` | CA et commandes par mois (12 derniers mois) |
+| `GET /stats/top-products` | Top 5 produits les plus vendus (avec `$unwind` + `$lookup`) |
+
+> **Note securite** : Les secrets dans `k8s/k8s-secrets.yml` sont en mode developpement/test uniquement. En production, il faudrait utiliser Sealed Secrets, HashiCorp Vault ou Mozilla SOPS.
 
 ## Securisation
 
@@ -233,24 +244,25 @@ kubectl get ingress -n flopachat
 ## Structure du projet
 
 ```
-├── namespace.yml              # Namespace Kubernetes
-├── k8s-secrets.yml            # Secrets (credentials)
 ├── deploy.sh                  # Script de deploiement
 ├── build-images.sh            # Script de build des images
 ├── stop.sh                    # Arret des pods (donnees conservees)
 ├── cleanup.sh                 # Suppression complete (namespace + images)
-├── network-policy.yml         # NetworkPolicy MongoDB
-├── mongo-pvc.yml              # PVC pour MongoDB
-├── server-pvc.yml             # PVC pour fichiers uploades
-├── mongo-deployment.yml       # Deployment MongoDB
-├── mongo-service.yml          # Service MongoDB
-├── server-deployment.yml      # Deployment serveur principal
-├── server-service.yml         # Service serveur principal
-├── stats-deployment.yml       # Deployment stats-service
-├── stats-service.yml          # Service stats-service
-├── front-deployment.yml       # Deployment frontend
-├── front-service.yml          # Service frontend
-├── ingress.yml                # Ingress (routage path-based)
+├── k8s/                       # Manifests Kubernetes
+│   ├── namespace.yml          # Namespace flopachat
+│   ├── k8s-secrets.yml        # Secrets (credentials, mode dev/test)
+│   ├── network-policy.yml     # NetworkPolicy MongoDB
+│   ├── mongo-pvc.yml          # PVC pour MongoDB
+│   ├── server-pvc.yml         # PVC pour fichiers uploades
+│   ├── mongo-deployment.yml   # Deployment MongoDB (avec probes + resources)
+│   ├── mongo-service.yml      # Service MongoDB
+│   ├── server-deployment.yml  # Deployment serveur principal
+│   ├── server-service.yml     # Service serveur principal
+│   ├── stats-deployment.yml   # Deployment stats-service
+│   ├── stats-service.yml      # Service stats-service
+│   ├── front-deployment.yml   # Deployment frontend
+│   ├── front-service.yml      # Service frontend
+│   └── ingress.yml            # Ingress (routage path-based)
 ├── front/                     # Application Vue.js
 ├── server/                    # API Express.js principale
 └── stats-service/             # Microservice statistiques

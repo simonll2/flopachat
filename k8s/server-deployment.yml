@@ -30,7 +30,8 @@ spec:
             - name: STATS_SERVICE_URL
               value: "http://stats-service:4000"
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health
               port: 5000
             initialDelaySeconds: 5
             periodSeconds: 10
