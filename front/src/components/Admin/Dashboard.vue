@@ -126,7 +126,6 @@ export default {
         scales: {
           y: {
             beginAtZero: true,
-            max: 30,
           },
         },
       };

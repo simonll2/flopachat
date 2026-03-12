@@ -34,5 +34,6 @@ header {
 main {
   flex: 1;
   padding: 20px;
+  padding-top: 110px;
 }
 </style>

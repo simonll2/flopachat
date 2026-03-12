@@ -30,6 +30,10 @@ const getOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
+    // Access control: user can only view their own orders, unless admin
+    if (!order.user.equals(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     res.json(order);
   } catch (error) {
     console.error("Error fetching order by ID:", error);

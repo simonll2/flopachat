@@ -17,7 +17,7 @@
         </div>
         <div class="col-md-6">
           <label for="password" class="form-label">Mot de passe:</label>
-          <input type="password" class="form-control" id="password" v-model="form.password" required />
+          <input type="password" class="form-control" id="password" v-model="form.password" required minlength="8" />
         </div>
       </div>
       <div class="row mb-3">

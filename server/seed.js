@@ -327,7 +327,7 @@ const seedDatabase = async () => {
       for (const user of users) {
         const numOrders = Math.floor(Math.random() * 10) + 5; // Generate between 5 and 15 orders per user
         for (let i = 0; i < numOrders; i++) {
-          const productSamples = products.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 5) + 1);
+          const productSamples = [...products].sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 5) + 1);
           const orderItems = productSamples.map((product) => ({
             product: product._id,
             quantity: Math.floor(Math.random() * 5) + 1,

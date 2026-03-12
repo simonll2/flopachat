@@ -11,7 +11,7 @@ function createToken(user) {
     },
     jwtSecret,
     {
-      expiresIn: "7d",
+      expiresIn: "24h",
       algorithm: "HS256",
     }
   );

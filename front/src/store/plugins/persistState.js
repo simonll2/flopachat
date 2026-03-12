@@ -5,6 +5,11 @@ export default function persistState(store) {
   }
 
   store.subscribe((mutation, state) => {
-    localStorage.setItem("store", JSON.stringify(state));
+    // Exclude sensitive data (token) from persisted state
+    const stateToPersist = JSON.parse(JSON.stringify(state));
+    if (stateToPersist.auth) {
+      delete stateToPersist.auth.token;
+    }
+    localStorage.setItem("store", JSON.stringify(stateToPersist));
   });
 }

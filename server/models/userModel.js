@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+    select: false,
   },
   role: {
     type: String,
@@ -33,7 +34,7 @@ const userSchema = new mongoose.Schema({
   },
   imagePath: { type: String },
   votedProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-});
+}, { timestamps: true });
 
 userSchema.pre("save", async function (next) {
   if (this.isModified("password") || this.isNew) {

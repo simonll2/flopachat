@@ -59,7 +59,8 @@ app.use('/api/stats', async (req, res) => {
         'Content-Type': 'application/json',
         ...(req.headers.authorization && { authorization: req.headers.authorization })
       },
-      params: req.query
+      params: req.query,
+      timeout: 10000
     });
     res.status(response.status).json(response.data);
   } catch (error) {
@@ -78,8 +79,14 @@ app.use("/api", orderRouter);
 app.use("/api", cartRouter);
 app.use("/api", paymentRouter);
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
 // Démarrage du serveur
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 db.once("open", async () => {
   console.log("Mongo is ready, starting seed...");
   await seedDatabase();

@@ -10,9 +10,12 @@ const verifyJwt =
     }
     if (header) {
       const [type, token] = header.split(/\s+/);
-      if (!/bearer/i.test(type) && block) {
-        console.error("Invalid token type");
-        return res.sendStatus(401);
+      if (!/bearer/i.test(type)) {
+        if (block) {
+          console.error("Invalid token type");
+          return res.sendStatus(401);
+        }
+        return next();
       }
 
       verifyToken(token)

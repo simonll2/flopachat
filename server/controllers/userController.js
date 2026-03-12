@@ -1,8 +1,6 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
-const { createToken } = require("../lib/jwt");
-const jwt = require("jsonwebtoken");
-const jwtSecret = process.env.JWT_SECRET || "jsonwebtokenexpressjsmongodbvuejsgroupe7boutiqueelectronique";
+const { createToken, verifyToken } = require("../lib/jwt");
 const upload = require("../lib/multerConfig");
 const path = require("path");
 const fs = require("fs");
@@ -13,13 +11,13 @@ const register = async (req, res) => {
       return res.status(400).send({ msg: err });
     }
     try {
-      const { email, password, role, firstName, lastName, address } = req.body;
+      const { email, password, firstName, lastName, address } = req.body;
       let user = await User.findOne({ email });
       if (!user) {
         user = new User({
           email,
           password,
-          role: role || "user",
+          role: "user",
           firstName,
           lastName,
           address,
@@ -38,7 +36,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    let user = await User.findOne({ email: req.body.email });
+    let user = await User.findOne({ email: req.body.email }).select('+password');
     if (!user) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
@@ -55,6 +53,10 @@ const login = async (req, res) => {
 
 const getUser = async (req, res) => {
   try {
+    // Access control: user can only view their own profile, unless admin
+    if (req.user._id.toString() !== req.params.id && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     let user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -73,7 +75,20 @@ const updateUser = async (req, res) => {
     }
     try {
       const userId = req.params.id;
-      let updatedUserData = { ...req.body };
+
+      // Access control: user can only update their own profile, unless admin
+      if (req.user._id.toString() !== userId && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      // Whitelist allowed fields to prevent role escalation
+      const allowedFields = ["email", "password", "firstName", "lastName", "address", "imagePath"];
+      let updatedUserData = {};
+      for (const key of allowedFields) {
+        if (req.body[key] !== undefined) {
+          updatedUserData[key] = req.body[key];
+        }
+      }
 
       if (req.file) {
         updatedUserData.imagePath = `/static/users/${req.file.filename}`;
@@ -101,7 +116,7 @@ const deleteUser = async (req, res) => {
     const userId = req.params.id;
 
     // Permettre la suppression si l'utilisateur est admin ou s'il essaie de supprimer son propre compte
-    if (req.user.role !== "admin" && req.user._id !== userId) {
+    if (req.user.role !== "admin" && req.user._id.toString() !== userId) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -124,8 +139,8 @@ const validateToken = async (req, res) => {
   }
 
   try {
-    // Vérifier le token
-    const decoded = jwt.verify(token, jwtSecret);
+    // Vérifier le token en utilisant la fonction centralisée
+    const decoded = await verifyToken(token);
     const userId = decoded._id;
 
     // Rechercher l'utilisateur dans la base de données

@@ -86,6 +86,8 @@ const actions = {
   logout({ commit, dispatch }) {
     commit("SET_USER", null);
     commit("CLEAR_TOKEN");
+    localStorage.removeItem("token");
+    localStorage.removeItem("store");
     dispatch("resetState", null, { root: true });
     router.push("/login");
   },

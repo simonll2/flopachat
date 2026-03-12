@@ -4,7 +4,7 @@ import { getToken } from "../utils/auth";
 import { loadStripe } from "@stripe/stripe-js";
 
 const stripePromise = loadStripe(
-  "pk_test_51PK9Z7FuOuEKM0JlpqImNwZDlSEVLgPIKmu4ug9iEBhmFlYy6daHz0seLnLX0GSvTjRjR35YOLu5ReEZLHpQGU9Y00YITkJNm9"
+  process.env.VUE_APP_STRIPE_PUBLIC_KEY || "pk_test_51PK9Z7FuOuEKM0JlpqImNwZDlSEVLgPIKmu4ug9iEBhmFlYy6daHz0seLnLX0GSvTjRjR35YOLu5ReEZLHpQGU9Y00YITkJNm9"
 );
 
 const API_URL = "/api";
