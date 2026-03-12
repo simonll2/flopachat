@@ -41,8 +41,7 @@ export default {
     ...mapActions("auth", ["login"]),
     async handleLogin() {
       try {
-        const response = await this.login(this.form);
-        console.log("Component response (login):", response);
+        await this.login(this.form);
 
         if (this.isAdmin) {
           this.$router.push("/admin");

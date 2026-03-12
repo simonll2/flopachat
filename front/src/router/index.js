@@ -10,11 +10,6 @@ import OrderPage from "../views/client/OrderPage.vue";
 import ProductDetailPage from "../views/client/ProductDetailPage.vue";
 import PaymentPage from "../views/client/PaymentPage.vue";
 import SuccessPage from "../views/client/SuccessPage.vue";
-import AdminProductsPage from "../views/admin/AdminProductsPage.vue";
-import AdminOrdersPage from "../views/admin/AdminOrdersPage.vue";
-import AdminUsersPage from "../views/admin/AdminUsersPage.vue";
-import AdminStatsPage from "../views/admin/AdminStatsPage.vue";
-import AdminDashboardPage from "../views/admin/AdminDashboardPage.vue"; // Import the new admin dashboard page
 import store from "../store"; // Import the Vuex store
 
 const routes = [
@@ -37,11 +32,11 @@ const routes = [
     path: "/admin",
     component: AdminLayout,
     children: [
-      { path: "", name: "AdminDashboard", component: AdminDashboardPage }, // Add the dashboard route
-      { path: "products", name: "AdminProducts", component: AdminProductsPage },
-      { path: "orders", name: "AdminOrders", component: AdminOrdersPage },
-      { path: "users", name: "AdminUsers", component: AdminUsersPage },
-      { path: "stats", name: "AdminStats", component: AdminStatsPage },
+      { path: "", name: "AdminDashboard", component: () => import("../views/admin/AdminDashboardPage.vue") },
+      { path: "products", name: "AdminProducts", component: () => import("../views/admin/AdminProductsPage.vue") },
+      { path: "orders", name: "AdminOrders", component: () => import("../views/admin/AdminOrdersPage.vue") },
+      { path: "users", name: "AdminUsers", component: () => import("../views/admin/AdminUsersPage.vue") },
+      { path: "stats", name: "AdminStats", component: () => import("../views/admin/AdminStatsPage.vue") },
     ],
     beforeEnter: (to, from, next) => {
       if (store.getters["auth/isAuthenticated"] && store.getters["auth/isAdmin"]) {
@@ -60,7 +55,7 @@ const router = createRouter({
 
 // Ajouter un hook beforeEach pour vérifier l'authentification
 router.beforeEach((to, from, next) => {
-  const protectedRoutes = ["Profile", "Cart", "Orders", "OrderDetail"];
+  const protectedRoutes = ["Profile", "Cart", "Orders", "OrderDetail", "Payment", "Success"];
 
   if (protectedRoutes.includes(to.name) && !store.getters["auth/isAuthenticated"]) {
     next({ name: "Login" });

@@ -95,7 +95,7 @@
 </template>
 <script>
 import { mapActions, mapGetters, useStore } from "vuex";
-import { onMounted, ref, watch, watchEffect } from "vue";
+import { onMounted, onUnmounted, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import bootstrap from "bootstrap/dist/js/bootstrap.bundle.js";
 
@@ -169,6 +169,10 @@ export default {
       });
 
       document.addEventListener("click", handleOutsideClick);
+    });
+
+    onUnmounted(() => {
+      document.removeEventListener("click", handleOutsideClick);
     });
 
     watchEffect(() => {

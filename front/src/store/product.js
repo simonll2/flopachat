@@ -51,7 +51,7 @@ const actions = {
   async updateProductThumbs({ commit, state }, { productId, type }) {
     const newValue = state.products.find((product) => product._id === productId)[type] + 1;
     const response = await ProductService.updateProductThumbs(productId, type, newValue);
-    commit("UPDATE_PRODUCT_THUMBS", response.data);
+    commit("UPDATE_PRODUCT", response.data);
   },
   async updateProduct({ commit }, { productId, product }) {
     const response = await ProductService.updateProduct(productId, product);

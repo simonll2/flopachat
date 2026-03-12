@@ -5,13 +5,18 @@
       avec un tas de nouveautés chaque jour ainsi qu'un matériel d'une qualité irréprochable ! <br />Les photos des
       produits sont conformes à la réalité. Se référer à la fiche détaillée du produit pour plus d'informations.
     </p>
-    <p>&copy; 2024 FlopAchat</p>
+    <p>&copy; {{ currentYear }} FlopAchat</p>
   </footer>
 </template>
 
 <script>
 export default {
   name: "FooterBar",
+  data() {
+    return {
+      currentYear: new Date().getFullYear(),
+    };
+  },
 };
 </script>
 

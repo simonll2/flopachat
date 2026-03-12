@@ -113,15 +113,20 @@ const updateThumbs = async (req, res) => {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    if (thumbsUp !== undefined) product.thumbsUp = thumbsUp;
-    if (thumbsDown !== undefined) product.thumbsDown = thumbsDown;
+    // Use $inc to increment server-side instead of accepting absolute values from client
+    const update = {};
+    if (thumbsUp !== undefined) update.thumbsUp = 1;
+    if (thumbsDown !== undefined) update.thumbsDown = 1;
 
-    await product.save();
+    const updatedProduct = await Product.findByIdAndUpdate(id, { $inc: update }, { new: true });
+    if (!updatedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
 
     user.votedProducts.push(id);
     await user.save();
 
-    res.json(product);
+    res.json(updatedProduct);
   } catch (error) {
     console.error("Error updating thumbs:", error);
     res.status(500).json({ error: "Internal server error" });

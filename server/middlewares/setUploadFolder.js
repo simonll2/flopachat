@@ -3,9 +3,6 @@ const fs = require("fs");
 
 const setUploadFolder = (req, res, next) => {
   let folder = "others";
-  console.log(`Original URL: ${req.originalUrl}`);
-  console.log(`Request Path: ${req.path}`);
-  console.log(`Request Method: ${req.method}`);
 
   if (req.originalUrl.includes("/register") || req.path.includes("/users")) {
     folder = "users";
@@ -19,7 +16,6 @@ const setUploadFolder = (req, res, next) => {
   if (!fs.existsSync(req.uploadFolder)) {
     fs.mkdirSync(req.uploadFolder, { recursive: true });
   }
-  console.log(`Upload folder set to: ${req.uploadFolder}`);
   next();
 };
 

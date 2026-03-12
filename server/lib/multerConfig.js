@@ -1,15 +1,15 @@
 const multer = require("multer");
+const crypto = require("crypto");
 const path = require("path");
 
 // Configurer le stockage dynamique
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = req.uploadFolder;
-    console.log(`Saving file to: ${dir}`);
     cb(null, dir);
   },
   filename: function (req, file, cb) {
-    cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
+    cb(null, file.fieldname + "-" + crypto.randomUUID() + path.extname(file.originalname));
   },
 });
 
@@ -31,7 +31,7 @@ function checkFileType(file, cb) {
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb("Error: Images Only!");
+    cb(new Error("Images Only!"));
   }
 }
 
