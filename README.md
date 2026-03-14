@@ -1,6 +1,6 @@
 # Flopachat — Application E-Commerce sur Kubernetes
 
-Application e-commerce complète déployée sur Kubernetes (Minikube), avec architecture microservices, persistance des données et sécurisation du cluster.
+Application e-commerce complète déployée sur Kubernetes (Minikube), avec architecture microservices, persistance des données, sécurisation avancée du cluster et Infrastructure as Code (Terraform).
 
 ## Stack technique
 
@@ -10,35 +10,43 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 - **Paiement** : Stripe (mode test)
 - **Conteneurisation** : Docker (multi-stage build pour le front)
 - **Orchestration** : Kubernetes (Minikube) + Nginx Ingress Controller
-- **Sécurité** : Kubernetes Secrets, NetworkPolicy, CORS restreint
+- **Infrastructure as Code** : Terraform (provider Kubernetes)
+- **Sécurité** : TLS/HTTPS, RBAC, NetworkPolicy, Kubernetes Secrets, ResourceQuota
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│              Kubernetes Cluster (namespace: flopachat)    │
-│                                                          │
-│  ┌──────────┐    ┌──────────────┐   ┌────────────────┐  │
-│  │  Front   │    │   Server     │   │ Stats Service  │  │
-│  │ (Vue.js) │    │  (Express)   │──▶│  (Express)     │  │
-│  │  :80     │    │   :5000      │   │   :4000        │  │
-│  └────┬─────┘    └──────┬───────┘   └───────┬────────┘  │
-│       │                 │                    │           │
-│       │                 └────────┬───────────┘           │
-│       │                         ▼                        │
-│       │               ┌──────────────┐                   │
-│       │               │   MongoDB    │                   │
-│       │               │   :27017     │                   │
-│       │               │  (+ PVC)     │                   │
-│       │               └──────────────┘                   │
-│       │                    ▲                              │
-│       │                    │ NetworkPolicy                │
-│       │                    │ (server + stats only)        │
-│  ─────┴────────────────────┴─────────────                │
-│              Nginx Ingress Controller                    │
-│        marketplace.local/     → front                    │
-│        marketplace.local/api  → server                   │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                Kubernetes Cluster (namespace: flopachat)             │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐     │
+│  │ RBAC: ServiceAccount + Role + RoleBinding (least privilege) │     │
+│  │ ResourceQuota: CPU 2/4, RAM 2Gi/4Gi, 20 pods max           │     │
+│  │ LimitRange: default CPU 250m, RAM 256Mi per container       │     │
+│  └─────────────────────────────────────────────────────────────┘     │
+│                                                                      │
+│  ┌──────────┐    ┌──────────────┐   ┌────────────────┐              │
+│  │  Front   │    │   Server     │   │ Stats Service  │              │
+│  │ (Vue.js) │    │  (Express)   │──▶│  (Express)     │              │
+│  │  :80     │    │   :5000      │   │   :4000        │              │
+│  │  HPA 1-3 │    │   HPA 1-5   │   │                │              │
+│  └────┬─────┘    └──────┬───────┘   └───────┬────────┘              │
+│       │                 │                    │                        │
+│       │                 └────────┬───────────┘                       │
+│       │                         ▼                                    │
+│       │               ┌──────────────┐                               │
+│       │               │   MongoDB    │                               │
+│       │               │   :27017     │                               │
+│       │               │  (+ PVC)     │                               │
+│       │               └──────────────┘                               │
+│       │                    ▲                                         │
+│       │                    │ NetworkPolicy                           │
+│       │                    │ (default-deny + allow server/stats)     │
+│  ─────┴────────────────────┴─────────────                           │
+│        Nginx Ingress Controller (TLS/HTTPS)                         │
+│        marketplace.local/     → front                                │
+│        marketplace.local/api  → server                               │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Prérequis
@@ -46,12 +54,13 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 - [Docker](https://docs.docker.com/get-docker/)
 - [Minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Terraform](https://developer.hashicorp.com/terraform/install) (optionnel, pour le déploiement IaC)
 
 ---
 
 ## Installation sur Linux natif
 
-### 1. Installer les dependances
+### 1. Installer les dépendances
 
 ```sh
 # Docker
@@ -69,14 +78,15 @@ curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
 
-### 2. Demarrer Minikube
+### 2. Démarrer Minikube
 
 ```sh
 minikube start --driver=docker
 minikube addons enable ingress
+minikube addons enable metrics-server   # Requis pour le HPA
 ```
 
-### 3. Construire et deployer
+### 3. Construire et déployer
 
 ```sh
 eval $(minikube docker-env)
@@ -84,14 +94,14 @@ eval $(minikube docker-env)
 ./deploy.sh
 ```
 
-### 4. Configurer l'acces
+### 4. Configurer l'accès
 
 ```sh
 # Ajouter marketplace.local dans /etc/hosts
 echo "$(minikube ip) marketplace.local" | sudo tee -a /etc/hosts
 ```
 
-### 5. Acceder a l'application
+### 5. Accéder à l'application
 
 Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur.
 
@@ -99,12 +109,12 @@ Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur.
 
 ## Installation sur WSL2 (Windows)
 
-> WSL2 utilise un reseau virtuel interne. `minikube ip` retourne une IP accessible uniquement depuis WSL, pas depuis le navigateur Windows. Il faut donc utiliser `minikube tunnel`.
+> WSL2 utilise un réseau virtuel interne. `minikube ip` retourne une IP accessible uniquement depuis WSL, pas depuis le navigateur Windows. Il faut donc utiliser `minikube tunnel`.
 
-### 1. Prerequis cote Windows
+### 1. Prérequis côté Windows
 
-- **WSL2** active avec une distribution Ubuntu (22.04+)
-- **Docker Desktop** installe et configure pour utiliser le backend WSL2
+- **WSL2** activé avec une distribution Ubuntu (22.04+)
+- **Docker Desktop** installé et configuré pour utiliser le backend WSL2
   - Dans Docker Desktop : Settings → Resources → WSL Integration → activer pour votre distribution
 
 ### 2. Installer kubectl et Minikube dans WSL
@@ -119,14 +129,15 @@ curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
 
-### 3. Demarrer Minikube
+### 3. Démarrer Minikube
 
 ```sh
 minikube start --driver=docker
 minikube addons enable ingress
+minikube addons enable metrics-server
 ```
 
-### 4. Construire et deployer
+### 4. Construire et déployer
 
 ```sh
 eval $(minikube docker-env)
@@ -134,9 +145,9 @@ eval $(minikube docker-env)
 ./deploy.sh
 ```
 
-### 5. Lancer le tunnel (specifique WSL2)
+### 5. Lancer le tunnel (spécifique WSL2)
 
-Dans un terminal WSL dedie (a laisser ouvert) :
+Dans un terminal WSL dédié (à laisser ouvert) :
 
 ```sh
 minikube tunnel
@@ -144,117 +155,218 @@ minikube tunnel
 
 > Cela expose les services Ingress sur `127.0.0.1` dans WSL, qui est aussi accessible depuis Windows.
 
-### 6. Configurer l'acces
+### 6. Configurer l'accès
 
-Editer le fichier hosts **cote Windows** (`C:\Windows\System32\drivers\etc\hosts`) en tant qu'administrateur et ajouter :
+Éditer le fichier hosts **côté Windows** (`C:\Windows\System32\drivers\etc\hosts`) en tant qu'administrateur et ajouter :
 
 ```
 127.0.0.1 marketplace.local
 ```
 
-> **Note :** avec `minikube tunnel`, l'IP est toujours `127.0.0.1`, pas celle retournee par `minikube ip`.
+> **Note :** avec `minikube tunnel`, l'IP est toujours `127.0.0.1`, pas celle retournée par `minikube ip`.
 
-### 7. Acceder a l'application
+### 7. Accéder à l'application
 
 Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur Windows.
 
 ---
 
+## Déploiement alternatif : Docker Compose (développement local)
+
+Pour un démarrage rapide sans Kubernetes :
+
+```sh
+docker compose up --build
+```
+
+L'application sera accessible sur [http://localhost:8080](http://localhost:8080).
+
+Pour arrêter :
+
+```sh
+docker compose down
+```
+
+---
+
+## Déploiement alternatif : Terraform (Infrastructure as Code)
+
+Pour déployer via Terraform (nécessite Minikube démarré) :
+
+```sh
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+Pour détruire l'infrastructure :
+
+```sh
+terraform destroy
+```
+
+---
+
 ## Informations communes
 
-**Compte admin par defaut :** `admin@admin.com` / `admin`
+**Compte admin par défaut :** `admin@admin.com` / `admin`
 
-## Fonctionnalites
+## Fonctionnalités
 
 - **Authentification** : inscription, connexion, gestion de profil avec photo
-- **Catalogue produits** : liste, detail, recherche, systeme de votes (thumbs up/down)
-- **Panier** : ajout, modification des quantites, suppression
-- **Commandes** : historique, detail, suivi de statut
-- **Paiement** : integration Stripe (mode test)
+- **Catalogue produits** : liste, détail, recherche, système de votes (thumbs up/down)
+- **Panier** : ajout, modification des quantités, suppression
+- **Commandes** : historique, détail, suivi de statut
+- **Paiement** : intégration Stripe (mode test)
 - **Administration** : gestion des produits, utilisateurs, commandes, tableau de bord statistiques
-- **Statistiques** : microservice dedie avec plusieurs endpoints d'agregation MongoDB (CA total, stats mensuelles, top produits, resume enrichi)
+- **Statistiques** : microservice dédié avec plusieurs endpoints d'agrégation MongoDB (CA total, stats mensuelles, top produits, résumé enrichi)
 
 ## Architecture microservices
 
-L'application est composee de 2 backends independants :
+L'application est composée de 2 backends indépendants :
 
-1. **server** (port 5000) : API principale gerant l'authentification, les produits, le panier, les commandes et le paiement
-2. **stats-service** (port 4000) : microservice dedie aux statistiques, avec pipelines d'agregation MongoDB avances (`$group`, `$unwind`, `$lookup`, `$dateToString`, `$sort`, `$limit`)
+1. **server** (port 5000) : API principale gérant l'authentification, les produits, le panier, les commandes et le paiement
+2. **stats-service** (port 4000) : microservice dédié aux statistiques, avec pipelines d'agrégation MongoDB avancés (`$group`, `$unwind`, `$lookup`, `$dateToString`, `$sort`, `$limit`)
 
-Le serveur principal agit comme **proxy** pour les requetes `/api/stats/*`, les transmettant au stats-service via HTTP interne au cluster Kubernetes. Cela demontre la **communication inter-services** au sein du cluster.
+Le serveur principal agit comme **proxy** pour les requêtes `/api/stats/*`, les transmettant au stats-service via HTTP interne au cluster Kubernetes. Cela démontre la **communication inter-services** au sein du cluster.
 
 ### Endpoints du stats-service
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /stats` | Totaux globaux (CA et nombre de commandes livrees) |
-| `GET /stats/summary` | Resume enrichi : CA, commandes livrees, panier moyen, repartition par statut |
+| `GET /stats` | Totaux globaux (CA et nombre de commandes livrées) |
+| `GET /stats/summary` | Résumé enrichi : CA, commandes livrées, panier moyen, répartition par statut |
 | `GET /stats/monthly` | CA et commandes par mois (12 derniers mois) |
 | `GET /stats/top-products` | Top 5 produits les plus vendus (avec `$unwind` + `$lookup`) |
 
-> **Note securite** : Les secrets dans `k8s/k8s-secrets.yml` sont en mode developpement/test uniquement. En production, il faudrait utiliser Sealed Secrets, HashiCorp Vault ou Mozilla SOPS.
+> **Note sécurité** : Les secrets dans `k8s/k8s-secrets.yml` sont en mode développement/test uniquement. En production, il faudrait utiliser Sealed Secrets, HashiCorp Vault ou Mozilla SOPS.
 
-## Securisation
+## Sécurisation du cluster
 
 | Mesure | Description |
 |--------|-------------|
-| **Kubernetes Secrets** | Les credentials (MongoDB URI, JWT secret, cle Stripe, CORS origin) sont stockes dans un Secret K8s et injectes via `envFrom` |
-| **NetworkPolicy** | Seuls les pods `server` et `stats-service` peuvent acceder a MongoDB |
-| **CORS restreint** | L'origine est limitee a `http://marketplace.local` |
+| **TLS/HTTPS** | Certificat TLS auto-signé sur l'Ingress (en production : cert-manager + Let's Encrypt) |
+| **RBAC** | ServiceAccount dédié avec Role et RoleBinding (principe du moindre privilège) |
+| **NetworkPolicy** | Default deny-all + règles explicites par service (front, server, stats, mongo) |
+| **Kubernetes Secrets** | Les credentials (MongoDB URI, JWT secret, clé Stripe) sont stockés dans un Secret K8s et injectés via `envFrom` |
+| **ConfigMap** | Les configurations non-sensibles (CORS, URLs internes, NODE_ENV) sont séparées dans un ConfigMap |
+| **ResourceQuota** | Limite globale du namespace : CPU 2/4, RAM 2Gi/4Gi, max 20 pods, 5 PVC |
+| **LimitRange** | Valeurs par défaut par conteneur : CPU 250m, RAM 256Mi |
+| **CORS restreint** | L'origine est limitée à `http://marketplace.local` |
 | **Health checks** | Liveness et readiness probes sur tous les deployments |
-| **PVC** | Persistance des donnees MongoDB et des fichiers uploades (images) |
-| **Namespace dedie** | Tous les manifests sont dans le namespace `flopachat` |
-| **Image versioning** | Tags versionnnes (`:v1.0`) au lieu de `:latest` |
+| **PVC** | Persistance des données MongoDB et des fichiers uploadés (images) |
+| **Namespace dédié** | Tous les manifests sont dans le namespace `flopachat` |
+| **Image versioning** | Tags versionnés (`:v1.0`) au lieu de `:latest` |
+
+## Scaling automatique (HPA)
+
+L'application utilise des `HorizontalPodAutoscaler` pour le scaling automatique :
+
+| Service | Min replicas | Max replicas | Métrique CPU | Métrique mémoire |
+|---------|-------------|-------------|--------------|------------------|
+| server | 1 | 5 | 70% | 80% |
+| front | 1 | 3 | 70% | — |
+
+Le HPA nécessite le metrics-server de Minikube : `minikube addons enable metrics-server`
 
 ## Technologies et patterns
 
-- Docker multi-stage build (front)
-- `.dockerignore` pour optimiser les images
-- Kubernetes Secrets pour les credentials
-- PersistentVolumeClaim pour MongoDB et les fichiers statiques
-- Ingress path-based routing (single host)
-- NetworkPolicy pour isoler MongoDB
-- Health checks (liveness + readiness probes)
+### Kubernetes
+- Namespace dédié
+- Deployments avec readiness/liveness probes
+- Services ClusterIP
+- Ingress Nginx avec TLS
+- PersistentVolumeClaim (MongoDB + fichiers statiques)
+- Kubernetes Secrets + ConfigMap
+- NetworkPolicy (default-deny + allow explicites)
+- RBAC (ServiceAccount + Role + RoleBinding)
+- ResourceQuota + LimitRange
+- HorizontalPodAutoscaler (autoscaling)
 - initContainers (attente de MongoDB)
-- Namespace Kubernetes dedie
+- Resource requests/limits sur chaque conteneur
+
+### Docker
+- Multi-stage build (frontend : node → nginx)
+- `.dockerignore` pour optimiser les images
+- `node:18-alpine` pour des images légères
+- Docker Compose pour le développement local
+
+### Infrastructure as Code
+- Terraform avec le provider Kubernetes
+- Variables paramétrables (images, tailles de stockage)
+- Outputs pour vérifier les ressources déployées
+- Toute l'infrastructure reproductible en une commande
+
+### Application
 - Proxy inter-services via axios
+- JWT pour l'authentification
+- Bcrypt pour le hashing des mots de passe
+- Multer pour l'upload de fichiers
+- Stripe pour le paiement
+- Vuex pour la gestion d'état
+- Chart.js pour les graphiques
 
 ## Commandes utiles
 
 ```sh
-# Verifier l'etat des pods
+# Vérifier l'état des pods
 kubectl get pods -n flopachat
 
 # Voir les logs d'un pod
 kubectl logs <pod-name> -n flopachat
 
-# Verifier les services
+# Vérifier les services
 kubectl get svc -n flopachat
 
-# Verifier l'ingress
+# Vérifier l'ingress
 kubectl get ingress -n flopachat
 
-# Arreter tous les pods (sans supprimer les donnees)
+# Vérifier l'autoscaler
+kubectl get hpa -n flopachat
+
+# Vérifier les network policies
+kubectl get networkpolicy -n flopachat
+
+# Vérifier les quotas
+kubectl get resourcequota -n flopachat
+
+# Vérifier le RBAC
+kubectl get sa,role,rolebinding -n flopachat
+
+# Arrêter tous les pods (sans supprimer les données)
 ./stop.sh
 
-# Supprimer tout (namespace, images Docker, donnees)
+# Supprimer tout (namespace, images Docker, données)
 ./cleanup.sh
+
+# Démarrage rapide avec Docker Compose
+docker compose up --build
+
+# Déploiement Terraform
+cd terraform && terraform init && terraform apply
 ```
 
 ## Structure du projet
 
 ```
-├── deploy.sh                  # Script de deploiement
-├── build-images.sh            # Script de build des images
-├── stop.sh                    # Arret des pods (donnees conservees)
-├── cleanup.sh                 # Suppression complete (namespace + images)
+├── deploy.sh                  # Script de déploiement Kubernetes
+├── build-images.sh            # Script de build des images Docker
+├── stop.sh                    # Arrêt des pods (données conservées)
+├── cleanup.sh                 # Suppression complète (namespace + images)
+├── docker-compose.yml         # Environnement de développement local
 ├── k8s/                       # Manifests Kubernetes
 │   ├── namespace.yml          # Namespace flopachat
+│   ├── configmap.yml          # ConfigMap (configs non-sensibles)
 │   ├── k8s-secrets.yml        # Secrets (credentials, mode dev/test)
-│   ├── network-policy.yml     # NetworkPolicy MongoDB
+│   ├── tls-secret.yml         # Certificat TLS auto-signé
+│   ├── rbac.yml               # ServiceAccount + Role + RoleBinding
+│   ├── resource-quota.yml     # ResourceQuota + LimitRange
+│   ├── network-policy.yml     # NetworkPolicies (deny-all + allow explicites)
+│   ├── hpa.yml                # HorizontalPodAutoscaler (server + front)
 │   ├── mongo-pvc.yml          # PVC pour MongoDB
-│   ├── server-pvc.yml         # PVC pour fichiers uploades
-│   ├── mongo-deployment.yml   # Deployment MongoDB (avec probes + resources)
+│   ├── server-pvc.yml         # PVC pour fichiers uploadés
+│   ├── mongo-deployment.yml   # Deployment MongoDB (probes + resources)
 │   ├── mongo-service.yml      # Service MongoDB
 │   ├── server-deployment.yml  # Deployment serveur principal
 │   ├── server-service.yml     # Service serveur principal
@@ -262,8 +374,17 @@ kubectl get ingress -n flopachat
 │   ├── stats-service.yml      # Service stats-service
 │   ├── front-deployment.yml   # Deployment frontend
 │   ├── front-service.yml      # Service frontend
-│   └── ingress.yml            # Ingress (routage path-based)
-├── front/                     # Application Vue.js
+│   └── ingress.yml            # Ingress (TLS + routage path-based)
+├── terraform/                 # Infrastructure as Code
+│   ├── main.tf                # Provider Kubernetes (Minikube)
+│   ├── variables.tf           # Variables paramétrables
+│   ├── namespace.tf           # Namespace
+│   ├── storage.tf             # PVC (MongoDB + static)
+│   ├── deployments.tf         # Deployments (mongo, server, stats, front)
+│   ├── services.tf            # Services Kubernetes
+│   ├── security.tf            # Secrets, ConfigMap, RBAC, NetworkPolicy, Quotas
+│   └── outputs.tf             # Outputs Terraform
+├── front/                     # Application Vue.js 3
 ├── server/                    # API Express.js principale
 └── stats-service/             # Microservice statistiques
 ```

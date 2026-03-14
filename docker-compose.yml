@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: flopachat-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - flopachat-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: ./server
+    container_name: flopachat-server
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/flopachat
+      - JWT_SECRET=jsonwebtokenexpressjsmongodbvuejsgroupe7boutiquelectronique
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      - CORS_ORIGIN=http://localhost:8080
+      - STATS_SERVICE_URL=http://stats-service:4000
+      - NODE_ENV=development
+    volumes:
+      - server-static:/app/static
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - flopachat-network
+
+  stats-service:
+    build: ./stats-service
+    container_name: flopachat-stats
+    ports:
+      - "4000:4000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/flopachat
+      - CORS_ORIGIN=http://localhost:8080
+      - NODE_ENV=development
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - flopachat-network
+
+  front:
+    build: ./front
+    container_name: flopachat-front
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+      - stats-service
+    networks:
+      - flopachat-network
+
+volumes:
+  mongo-data:
+  server-static:
+
+networks:
+  flopachat-network:
+    driver: bridge

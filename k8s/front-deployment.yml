@@ -13,6 +13,7 @@ spec:
       labels:
         app: front
     spec:
+      serviceAccountName: flopachat-sa
       containers:
         - name: front
           image: devbsamy/front:v1.0

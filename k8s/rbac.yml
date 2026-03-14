@@ -1,0 +1,44 @@
+# ServiceAccount for the application pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flopachat-sa
+  namespace: flopachat
+  labels:
+    app: flopachat
+---
+# Role with minimal permissions (least privilege principle)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: flopachat-role
+  namespace: flopachat
+  labels:
+    app: flopachat
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+---
+# Bind the role to the service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: flopachat-rolebinding
+  namespace: flopachat
+  labels:
+    app: flopachat
+subjects:
+  - kind: ServiceAccount
+    name: flopachat-sa
+    namespace: flopachat
+roleRef:
+  kind: Role
+  name: flopachat-role
+  apiGroup: rbac.authorization.k8s.io

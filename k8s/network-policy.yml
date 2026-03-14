@@ -1,7 +1,74 @@
+# Default deny all ingress traffic in the namespace
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: mongo-access
+  name: default-deny-all
+  namespace: flopachat
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Allow ingress traffic to the frontend from anywhere (public)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-front-ingress
+  namespace: flopachat
+spec:
+  podSelector:
+    matchLabels:
+      app: front
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 80
+---
+# Allow ingress traffic to the server from anywhere (via Ingress controller)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-server-ingress
+  namespace: flopachat
+spec:
+  podSelector:
+    matchLabels:
+      app: server
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 5000
+---
+# Allow ingress traffic to stats-service only from server
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-stats-from-server
+  namespace: flopachat
+spec:
+  podSelector:
+    matchLabels:
+      app: stats-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: server
+      ports:
+        - protocol: TCP
+          port: 4000
+---
+# Allow MongoDB access only from server and stats-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mongo-access
   namespace: flopachat
 spec:
   podSelector:
