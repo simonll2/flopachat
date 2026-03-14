@@ -196,16 +196,27 @@ docker compose down
 
 ## Déploiement alternatif : Terraform (Infrastructure as Code)
 
-Pour déployer via Terraform (nécessite Minikube démarré) :
+Pour déployer toute l'infrastructure via Terraform (nécessite Minikube démarré + Ingress + metrics-server activés) :
 
 ```sh
+# Prérequis
+minikube start --driver=docker
+minikube addons enable ingress
+minikube addons enable metrics-server
+eval $(minikube docker-env)
+./build-images.sh          # Build les images Docker localement
+
+# Déploiement Terraform
 cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Éditer terraform.tfvars avec vos valeurs (MongoDB URI, JWT secret, clé Stripe)
 terraform init
-terraform plan
-terraform apply
+terraform plan             # Aperçu de ce qui sera créé
+terraform apply            # Déploie toute l'infrastructure
 ```
+
+Terraform crée **toutes** les ressources Kubernetes en une seule commande :
+namespace, deployments, services, ingress (TLS), secrets, configmap, RBAC, network policies, resource quotas, HPA.
+
+> **Note** : les valeurs sensibles (MongoDB URI, JWT secret, clé Stripe) ont des valeurs par défaut fonctionnelles pour le mode développement. Pour les personnaliser : `cp terraform.tfvars.example terraform.tfvars` et éditer le fichier.
 
 Pour détruire l'infrastructure :
 
@@ -393,9 +404,10 @@ cd terraform && terraform init && terraform apply
 │   ├── deployments.tf         # Deployments (mongo, server, stats, front)
 │   ├── services.tf            # Services Kubernetes
 │   ├── security.tf            # Secrets, ConfigMap, RBAC, NetworkPolicy, Quotas
-│   ├── ingress.tf             # Ingress avec TLS
+│   ├── ingress.tf             # TLS Secret + Ingress avec TLS
 │   ├── hpa.tf                 # HorizontalPodAutoscaler
-│   └── outputs.tf             # Outputs Terraform
+│   ├── outputs.tf             # Outputs Terraform
+│   └── certs/                 # Certificats TLS auto-signés (dev)
 ├── front/                     # Application Vue.js 3
 ├── server/                    # API Express.js principale
 └── stats-service/             # Microservice statistiques

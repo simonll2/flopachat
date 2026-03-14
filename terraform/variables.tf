@@ -58,6 +58,6 @@ variable "jwt_secret" {
 variable "stripe_secret_key" {
   description = "Stripe secret key (test mode)"
   type        = string
+  default     = "sk_test_placeholder"
   sensitive   = true
-  # No default — must be provided via terraform.tfvars or TF_VAR_stripe_secret_key
 }

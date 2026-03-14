@@ -1,3 +1,16 @@
+# TLS Secret (self-signed certificate for development)
+resource "kubernetes_secret" "tls_secret" {
+  metadata {
+    name      = "tls-secret"
+    namespace = kubernetes_namespace.flopachat.metadata[0].name
+  }
+  type = "kubernetes.io/tls"
+  data = {
+    "tls.crt" = file("${path.module}/certs/tls.crt")
+    "tls.key" = file("${path.module}/certs/tls.key")
+  }
+}
+
 # Kubernetes Ingress — equivalent of k8s/ingress.yml
 resource "kubernetes_ingress_v1" "app_ingress" {
   metadata {
