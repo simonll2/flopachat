@@ -195,6 +195,8 @@ Pour déployer via Terraform (nécessite Minikube démarré) :
 
 ```sh
 cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Éditer terraform.tfvars avec vos valeurs (MongoDB URI, JWT secret, clé Stripe)
 terraform init
 terraform plan
 terraform apply
