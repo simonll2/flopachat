@@ -181,6 +181,11 @@ docker compose up --build
 
 L'application sera accessible sur [http://localhost:8080](http://localhost:8080).
 
+L'architecture Docker Compose reproduit le même routage que Kubernetes :
+- Un conteneur **gateway** (nginx reverse proxy) joue le rôle de l'Ingress
+- `/api` et `/static` sont routés vers le **server**
+- `/` est routé vers le **front**
+
 Pour arrêter :
 
 ```sh
@@ -377,6 +382,9 @@ cd terraform && terraform init && terraform apply
 │   ├── front-deployment.yml   # Deployment frontend
 │   ├── front-service.yml      # Service frontend
 │   └── ingress.yml            # Ingress (TLS + routage path-based)
+├── nginx-proxy/               # Reverse proxy pour Docker Compose
+│   ├── Dockerfile             # Image nginx
+│   └── nginx.conf             # Routage /api → server, / → front
 ├── terraform/                 # Infrastructure as Code
 │   ├── main.tf                # Provider Kubernetes (Minikube)
 │   ├── variables.tf           # Variables paramétrables
@@ -385,6 +393,8 @@ cd terraform && terraform init && terraform apply
 │   ├── deployments.tf         # Deployments (mongo, server, stats, front)
 │   ├── services.tf            # Services Kubernetes
 │   ├── security.tf            # Secrets, ConfigMap, RBAC, NetworkPolicy, Quotas
+│   ├── ingress.tf             # Ingress avec TLS
+│   ├── hpa.tf                 # HorizontalPodAutoscaler
 │   └── outputs.tf             # Outputs Terraform
 ├── front/                     # Application Vue.js 3
 ├── server/                    # API Express.js principale

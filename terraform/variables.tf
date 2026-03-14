@@ -51,13 +51,13 @@ variable "mongo_uri" {
 variable "jwt_secret" {
   description = "JWT signing secret"
   type        = string
-  default     = "change-me-in-production"
+  default     = "jsonwebtokenexpressjsmongodbvuejsgroupe7boutiquelectronique"
   sensitive   = true
 }
 
 variable "stripe_secret_key" {
   description = "Stripe secret key (test mode)"
   type        = string
-  default     = "change-me-in-production"
   sensitive   = true
+  # No default — must be provided via terraform.tfvars or TF_VAR_stripe_secret_key
 }
