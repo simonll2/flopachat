@@ -341,7 +341,35 @@ Le serveur principal agit comme **proxy** pour les requêtes `/api/stats/*`, les
 | `GET /stats/monthly` | CA et commandes par mois (12 derniers mois) |
 | `GET /stats/top-products` | Top 5 produits les plus vendus (avec `$unwind` + `$lookup`) |
 
-> **Note sécurité** : Les secrets dans `k8s/k8s-secrets.yml` sont en mode développement/test uniquement. En production, il faudrait utiliser Sealed Secrets, HashiCorp Vault ou Mozilla SOPS.
+## Gestion des secrets
+
+Les secrets de l'application (MongoDB URI, JWT secret, clé Stripe) sont présents dans le dépôt Git sous deux formes :
+
+- **`k8s/k8s-secrets.yml`** : encodés en base64 (format standard des `kind: Secret` Kubernetes)
+- **`terraform/variables.tf`** : encodés en base64 dans les valeurs par défaut des variables, décodés au runtime via `base64decode()`
+
+**Pourquoi c'est acceptable ici :**
+
+| Point | Explication |
+|-------|-------------|
+| Base64 ≠ chiffrement | Le base64 est un encodage réversible, pas de la cryptographie. C'est le **fonctionnement standard** de Kubernetes Secrets. |
+| Clé Stripe en mode test | La clé `sk_test_...` ne peut pas débiter de vrais comptes bancaires. |
+| JWT secret arbitraire | Chaîne inventée pour le projet, pas un credential externe. |
+| MongoDB URI interne | `mongodb://mongo:27017` pointe sur un service interne au cluster, inaccessible depuis l'extérieur. |
+
+**En production, il faudrait utiliser :**
+
+| Solution | Description |
+|----------|-------------|
+| [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets) | Chiffre les secrets avec une clé publique ; seul le cluster peut les déchiffrer |
+| [HashiCorp Vault](https://www.vaultproject.io/) | Gestion centralisée des secrets avec rotation automatique et audit |
+| [Mozilla SOPS](https://github.com/getsops/sops) | Chiffre les fichiers YAML/JSON avec AWS KMS, GCP KMS ou PGP |
+| [external-secrets](https://external-secrets.io/) | Synchronise les secrets depuis un provider externe (AWS SSM, GCP Secret Manager, Vault) |
+
+Les mesures déjà en place dans le projet pour limiter l'exposition :
+- Les variables Terraform sont marquées `sensitive = true` (masquées dans les logs et le `terraform plan`)
+- Le `.gitignore` exclut `terraform.tfvars` (pour personnaliser les secrets sans les commiter)
+- Le fichier `terraform.tfvars.example` sert de template sans contenir de valeurs réelles
 
 ## Sécurisation du cluster
 
