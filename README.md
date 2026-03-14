@@ -21,19 +21,19 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────┐     │
 │  │ RBAC: ServiceAccount + Role + RoleBinding (least privilege) │     │
-│  │ ResourceQuota: CPU 2/4, RAM 2Gi/4Gi, 20 pods max           │     │
+│  │ ResourceQuota: CPU 2/4, RAM 2Gi/4Gi, 20 pods max           │      │
 │  │ LimitRange: default CPU 250m, RAM 256Mi per container       │     │
 │  └─────────────────────────────────────────────────────────────┘     │
 │                                                                      │
-│  ┌──────────┐    ┌──────────────┐   ┌────────────────┐              │
-│  │  Front   │    │   Server     │   │ Stats Service  │              │
-│  │ (Vue.js) │    │  (Express)   │──▶│  (Express)     │              │
-│  │  :80     │    │   :5000      │   │   :4000        │              │
-│  │  HPA 1-3 │    │   HPA 1-5   │   │                │              │
-│  └────┬─────┘    └──────┬───────┘   └───────┬────────┘              │
-│       │                 │                    │                        │
-│       │                 └────────┬───────────┘                       │
-│       │                         ▼                                    │
+│  ┌──────────┐    ┌──────────────┐   ┌────────────────┐               │
+│  │  Front   │    │   Server     │   │ Stats Service  │               │
+│  │ (Vue.js) │    │  (Express)   │─▶ │  (Express)    │               │
+│  │  :80     │    │   :5000      │   │   :4000        │               │
+│  │  HPA 1-3 │    │   HPA 1-5   │    │                │               │
+│  └────┬─────┘    └──────┬───────┘   └───────┬────────┘               │
+│       │                 │                   │                        │
+│       │                 └────────┬──────────┘                        │
+│       │                          ▼                                   │
 │       │               ┌──────────────┐                               │
 │       │               │   MongoDB    │                               │
 │       │               │   :27017     │                               │
@@ -42,8 +42,8 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 │       │                    ▲                                         │
 │       │                    │ NetworkPolicy                           │
 │       │                    │ (default-deny + allow server/stats)     │
-│  ─────┴────────────────────┴─────────────                           │
-│        Nginx Ingress Controller (TLS/HTTPS)                         │
+│  ─────┴────────────────────┴─────────────                            │
+│        Nginx Ingress Controller (TLS/HTTPS)                          │
 │        marketplace.local/     → front                                │
 │        marketplace.local/api  → server                               │
 └──────────────────────────────────────────────────────────────────────┘
