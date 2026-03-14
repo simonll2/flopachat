@@ -267,7 +267,9 @@ L'Ingress Nginx assure le **routage path-based** depuis un point d'entrée uniqu
 | `/static` | server-service:5000 | Images uploadées |
 | `/` | front-service:80 | Application Vue.js |
 
-L'Ingress est configuré avec **TLS** (certificat auto-signé) permettant l'accès en HTTPS.
+L'Ingress est configuré avec **TLS/HTTPS**. Le certificat auto-signé est généré automatiquement :
+- **Via kubectl** : le manifeste `k8s/tls-secret.yml` contient un certificat pré-généré
+- **Via Terraform** : le provider `hashicorp/tls` génère le certificat à la volée lors du `terraform apply`, évitant de stocker des clés privées dans le dépôt Git
 
 > *Capture 15 : `kubectl get ingress -n flopachat` montrant l'ingress avec l'adresse et les règles*
 
@@ -359,7 +361,7 @@ La configuration est séparée entre données **sensibles** et **non-sensibles**
 | Ressource | Contenu | Usage |
 |-----------|---------|-------|
 | **Secret** `app-secrets` | MONGO_URI, JWT_SECRET, STRIPE_SECRET_KEY | Injecté via `envFrom: secretRef` |
-| **Secret** `tls-secret` | Certificat TLS + clé privée | Utilisé par l'Ingress pour HTTPS |
+| **Secret** `tls-secret` | Certificat TLS auto-signé (généré par le provider `hashicorp/tls` via Terraform, ou pré-inclus dans `k8s/tls-secret.yml` via kubectl) | Utilisé par l'Ingress pour HTTPS |
 | **ConfigMap** `app-config` | CORS_ORIGIN, STATS_SERVICE_URL, NODE_ENV, MONGO_DB_NAME | Injecté via `envFrom: configMapRef` |
 
 Cette séparation permet de modifier la configuration non-sensible sans toucher aux secrets.
@@ -402,7 +404,7 @@ terraform/
 ├── deployments.tf    # 4 deployments avec probes et resources
 ├── services.tf       # 4 services ClusterIP
 ├── security.tf       # Secrets, ConfigMap, RBAC, NetworkPolicies, Quotas
-├── ingress.tf        # TLS Secret + Ingress
+├── ingress.tf        # Génération TLS (provider hashicorp/tls) + Ingress
 ├── hpa.tf            # HorizontalPodAutoscaler
 └── outputs.tf        # Outputs de vérification
 ```
@@ -429,6 +431,24 @@ data = {
   STRIPE_SECRET_KEY = base64decode(var.stripe_secret_key_b64)
 }
 ```
+
+Le certificat TLS est **généré à la volée** par le provider `hashicorp/tls`, évitant de stocker des clés privées dans le dépôt Git :
+
+```hcl
+resource "tls_private_key" "ingress" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "tls_self_signed_cert" "ingress" {
+  private_key_pem       = tls_private_key.ingress.private_key_pem
+  validity_period_hours = 8760  # 1 an
+  dns_names             = ["marketplace.local"]
+  # ...
+}
+```
+
+La clé privée n'existe que dans le Terraform state (local) et dans le Secret Kubernetes du cluster. Rien de sensible n'est commité dans Git.
 
 ### 7.3 Ressources créées
 

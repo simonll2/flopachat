@@ -375,7 +375,7 @@ Les mesures déjà en place dans le projet pour limiter l'exposition :
 
 | Mesure | Description |
 |--------|-------------|
-| **TLS/HTTPS** | Certificat TLS auto-signé sur l'Ingress (en production : cert-manager + Let's Encrypt) |
+| **TLS/HTTPS** | Certificat TLS auto-signé sur l'Ingress. Via Terraform : généré à la volée par le provider `hashicorp/tls` (aucune clé privée dans Git). Via kubectl : pré-inclus dans `k8s/tls-secret.yml`. En production : cert-manager + Let's Encrypt |
 | **RBAC** | ServiceAccount dédié avec Role et RoleBinding (principe du moindre privilège) |
 | **NetworkPolicy** | Default deny-all + règles explicites par service (front, server, stats, mongo) |
 | **Kubernetes Secrets** | Les credentials (MongoDB URI, JWT secret, clé Stripe) sont stockés dans un Secret K8s et injectés via `envFrom` |
@@ -425,6 +425,7 @@ Le HPA nécessite le metrics-server de Minikube : `minikube addons enable metric
 - Terraform avec le provider Kubernetes
 - Variables paramétrables (images, tailles de stockage)
 - Secrets encodés en base64 (décodés au runtime via `base64decode()`)
+- Certificat TLS généré à la volée par le provider `hashicorp/tls` (aucune clé privée dans Git)
 - Outputs pour vérifier les ressources déployées
 - Toute l'infrastructure reproductible en une commande
 
@@ -510,7 +511,7 @@ kubectl get sa,role,rolebinding -n flopachat
 │   ├── deployments.tf         # Deployments (mongo, server, stats, front)
 │   ├── services.tf            # Services Kubernetes
 │   ├── security.tf            # Secrets, ConfigMap, RBAC, NetworkPolicy, Quotas
-│   ├── ingress.tf             # TLS Secret + Ingress avec TLS
+│   ├── ingress.tf             # Génération TLS (provider hashicorp/tls) + Ingress
 │   ├── hpa.tf                 # HorizontalPodAutoscaler
 │   └── outputs.tf             # Outputs Terraform
 ├── front/                     # Application Vue.js 3
