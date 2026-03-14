@@ -49,13 +49,6 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Prérequis
-
-- [Docker](https://docs.docker.com/get-docker/)
-- [Minikube](https://minikube.sigs.k8s.io/docs/start/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [Terraform](https://developer.hashicorp.com/terraform/install) (optionnel, pour le déploiement IaC)
-
 ---
 
 ## Installation sur Linux natif
@@ -63,8 +56,10 @@ Application e-commerce complète déployée sur Kubernetes (Minikube), avec arch
 ### 1. Installer les dépendances
 
 ```sh
-# Docker
+# Mettre à jour les paquets
 sudo apt-get update
+
+# Docker
 sudo apt-get install -y docker.io
 sudo usermod -aG docker $USER
 newgrp docker
@@ -76,6 +71,20 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 # Minikube
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# Terraform
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt-get update && sudo apt-get install -y terraform
+```
+
+Vérifier que tout est installé :
+
+```sh
+docker --version
+kubectl version --client
+minikube version
+terraform -version
 ```
 
 ### 2. Démarrer Minikube
@@ -86,30 +95,78 @@ minikube addons enable ingress
 minikube addons enable metrics-server   # Requis pour le HPA
 ```
 
-### 3. Construire et déployer
+### 3. Construire les images Docker
 
 ```sh
+# Connecter le Docker local au Docker de Minikube
 eval $(minikube docker-env)
+
+# Build les 3 images
 ./build-images.sh
+```
+
+### 4. Déployer l'application
+
+Trois méthodes de déploiement sont disponibles. Choisir **une seule** :
+
+#### Méthode A : Manifestes Kubernetes (kubectl)
+
+```sh
 ./deploy.sh
 ```
 
-### 4. Configurer l'accès
+#### Méthode B : Terraform (Infrastructure as Code)
+
+```sh
+cd terraform
+terraform init
+terraform plan       # Aperçu des ressources qui seront créées
+terraform apply      # Déploie toute l'infrastructure (répondre "yes")
+cd ..
+```
+
+#### Méthode C : Docker Compose (développement rapide, sans Kubernetes)
+
+> Cette méthode ne nécessite **pas** Minikube. Elle lance les conteneurs directement avec Docker.
+
+```sh
+docker compose up --build
+```
+
+L'application sera accessible sur [http://localhost:8080](http://localhost:8080) (pas besoin de configurer `/etc/hosts`).
+
+L'architecture Docker Compose reproduit le même routage que Kubernetes :
+- Un conteneur **gateway** (nginx reverse proxy) joue le rôle de l'Ingress
+- `/api` et `/static` sont routés vers le **server**
+- `/` est routé vers le **front**
+
+Pour arrêter : `docker compose down`
+
+> **Note :** les étapes 5 et 6 ci-dessous ne s'appliquent **pas** à Docker Compose.
+
+### 5. Configurer l'accès (méthodes A et B uniquement)
 
 ```sh
 # Ajouter marketplace.local dans /etc/hosts
 echo "$(minikube ip) marketplace.local" | sudo tee -a /etc/hosts
 ```
 
-### 5. Accéder à l'application
+### 6. Accéder à l'application
 
-Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur.
+| Méthode | URL |
+|---------|-----|
+| A (kubectl) ou B (Terraform) | [http://marketplace.local](http://marketplace.local) |
+| C (Docker Compose) | [http://localhost:8080](http://localhost:8080) |
+
+**Compte admin par défaut :** `admin@admin.com` / `admin`
+
+**Carte de test Stripe :** `4242 4242 4242 4242` (date et CVC quelconques)
 
 ---
 
 ## Installation sur WSL2 (Windows)
 
-> WSL2 utilise un réseau virtuel interne. `minikube ip` retourne une IP accessible uniquement depuis WSL, pas depuis le navigateur Windows. Il faut donc utiliser `minikube tunnel`.
+> WSL2 utilise un réseau virtuel interne. `minikube ip` retourne une IP accessible uniquement depuis WSL, pas depuis le navigateur Windows. Il faut donc utiliser `minikube tunnel` pour les méthodes A et B.
 
 ### 1. Prérequis côté Windows
 
@@ -117,7 +174,9 @@ Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur.
 - **Docker Desktop** installé et configuré pour utiliser le backend WSL2
   - Dans Docker Desktop : Settings → Resources → WSL Integration → activer pour votre distribution
 
-### 2. Installer kubectl et Minikube dans WSL
+### 2. Installer les dépendances dans WSL
+
+Ouvrir un terminal WSL (Ubuntu) :
 
 ```sh
 # kubectl
@@ -127,6 +186,20 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 # Minikube
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# Terraform
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt-get update && sudo apt-get install -y terraform
+```
+
+Vérifier que tout est installé :
+
+```sh
+docker --version      # Fourni par Docker Desktop via WSL integration
+kubectl version --client
+minikube version
+terraform -version
 ```
 
 ### 3. Démarrer Minikube
@@ -134,20 +207,53 @@ sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```sh
 minikube start --driver=docker
 minikube addons enable ingress
-minikube addons enable metrics-server
+minikube addons enable metrics-server   # Requis pour le HPA
 ```
 
-### 4. Construire et déployer
+### 4. Construire les images Docker
 
 ```sh
 eval $(minikube docker-env)
 ./build-images.sh
+```
+
+### 5. Déployer l'application
+
+Trois méthodes de déploiement sont disponibles. Choisir **une seule** :
+
+#### Méthode A : Manifestes Kubernetes (kubectl)
+
+```sh
 ./deploy.sh
 ```
 
-### 5. Lancer le tunnel (spécifique WSL2)
+#### Méthode B : Terraform (Infrastructure as Code)
 
-Dans un terminal WSL dédié (à laisser ouvert) :
+```sh
+cd terraform
+terraform init
+terraform plan       # Aperçu des ressources qui seront créées
+terraform apply      # Déploie toute l'infrastructure (répondre "yes")
+cd ..
+```
+
+#### Méthode C : Docker Compose (développement rapide, sans Kubernetes)
+
+> Cette méthode ne nécessite **pas** Minikube. Elle lance les conteneurs directement avec Docker.
+
+```sh
+docker compose up --build
+```
+
+L'application sera accessible sur [http://localhost:8080](http://localhost:8080) (pas besoin de configurer le fichier hosts).
+
+Pour arrêter : `docker compose down`
+
+> **Note :** les étapes 6 et 7 ci-dessous ne s'appliquent **pas** à Docker Compose.
+
+### 6. Lancer le tunnel (méthodes A et B uniquement)
+
+Dans un **second terminal WSL** (à laisser ouvert) :
 
 ```sh
 minikube tunnel
@@ -155,7 +261,7 @@ minikube tunnel
 
 > Cela expose les services Ingress sur `127.0.0.1` dans WSL, qui est aussi accessible depuis Windows.
 
-### 6. Configurer l'accès
+### 7. Configurer l'accès (méthodes A et B uniquement)
 
 Éditer le fichier hosts **côté Windows** (`C:\Windows\System32\drivers\etc\hosts`) en tant qu'administrateur et ajouter :
 
@@ -165,70 +271,47 @@ minikube tunnel
 
 > **Note :** avec `minikube tunnel`, l'IP est toujours `127.0.0.1`, pas celle retournée par `minikube ip`.
 
-### 7. Accéder à l'application
+### 8. Accéder à l'application
 
-Ouvrir [http://marketplace.local](http://marketplace.local) dans le navigateur Windows.
-
----
-
-## Déploiement alternatif : Docker Compose (développement local)
-
-Pour un démarrage rapide sans Kubernetes :
-
-```sh
-docker compose up --build
-```
-
-L'application sera accessible sur [http://localhost:8080](http://localhost:8080).
-
-L'architecture Docker Compose reproduit le même routage que Kubernetes :
-- Un conteneur **gateway** (nginx reverse proxy) joue le rôle de l'Ingress
-- `/api` et `/static` sont routés vers le **server**
-- `/` est routé vers le **front**
-
-Pour arrêter :
-
-```sh
-docker compose down
-```
-
----
-
-## Déploiement alternatif : Terraform (Infrastructure as Code)
-
-Pour déployer toute l'infrastructure via Terraform (nécessite Minikube démarré + Ingress + metrics-server activés) :
-
-```sh
-# Prérequis
-minikube start --driver=docker
-minikube addons enable ingress
-minikube addons enable metrics-server
-eval $(minikube docker-env)
-./build-images.sh          # Build les images Docker localement
-
-# Déploiement Terraform
-cd terraform
-terraform init
-terraform plan             # Aperçu de ce qui sera créé
-terraform apply            # Déploie toute l'infrastructure
-```
-
-Terraform crée **toutes** les ressources Kubernetes en une seule commande :
-namespace, deployments, services, ingress (TLS), secrets, configmap, RBAC, network policies, resource quotas, HPA.
-
-> **Note** : les valeurs sensibles (MongoDB URI, JWT secret, clé Stripe) ont des valeurs par défaut fonctionnelles pour le mode développement. Pour les personnaliser : `cp terraform.tfvars.example terraform.tfvars` et éditer le fichier.
-
-Pour détruire l'infrastructure :
-
-```sh
-terraform destroy
-```
-
----
-
-## Informations communes
+| Méthode | URL |
+|---------|-----|
+| A (kubectl) ou B (Terraform) | [http://marketplace.local](http://marketplace.local) |
+| C (Docker Compose) | [http://localhost:8080](http://localhost:8080) |
 
 **Compte admin par défaut :** `admin@admin.com` / `admin`
+
+**Carte de test Stripe :** `4242 4242 4242 4242` (date et CVC quelconques)
+
+---
+
+## Nettoyage
+
+### Supprimer le déploiement Kubernetes (méthode A)
+
+```sh
+./cleanup.sh
+```
+
+### Supprimer le déploiement Terraform (méthode B)
+
+```sh
+cd terraform
+terraform destroy    # Répondre "yes"
+```
+
+### Supprimer le déploiement Docker Compose (méthode C)
+
+```sh
+docker compose down -v   # -v supprime aussi les volumes
+```
+
+### Arrêter Minikube
+
+```sh
+minikube stop
+```
+
+---
 
 ## Fonctionnalités
 
@@ -313,6 +396,7 @@ Le HPA nécessite le metrics-server de Minikube : `minikube addons enable metric
 ### Infrastructure as Code
 - Terraform avec le provider Kubernetes
 - Variables paramétrables (images, tailles de stockage)
+- Secrets encodés en base64 (décodés au runtime via `base64decode()`)
 - Outputs pour vérifier les ressources déployées
 - Toute l'infrastructure reproductible en une commande
 
@@ -357,12 +441,6 @@ kubectl get sa,role,rolebinding -n flopachat
 
 # Supprimer tout (namespace, images Docker, données)
 ./cleanup.sh
-
-# Démarrage rapide avec Docker Compose
-docker compose up --build
-
-# Déploiement Terraform
-cd terraform && terraform init && terraform apply
 ```
 
 ## Structure du projet
