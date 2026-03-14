@@ -102,6 +102,7 @@ minikube addons enable metrics-server   # Requis pour le HPA
 eval $(minikube docker-env)
 
 # Build les 3 images
+cd flopachat
 ./build-images.sh
 ```
 
@@ -109,13 +110,7 @@ eval $(minikube docker-env)
 
 Trois méthodes de déploiement sont disponibles. Choisir **une seule** :
 
-#### Méthode A : Manifestes Kubernetes (kubectl)
-
-```sh
-./deploy.sh
-```
-
-#### Méthode B : Terraform (Infrastructure as Code)
+#### Méthode A : Terraform (Infrastructure as Code)
 
 ```sh
 cd terraform
@@ -125,11 +120,19 @@ terraform apply      # Déploie toute l'infrastructure (répondre "yes")
 cd ..
 ```
 
-#### Méthode C : Docker Compose (développement rapide, sans Kubernetes)
+#### Méthode B : Kubernetes (kubectl)
+
+```sh
+cd flopachat
+./deploy.sh
+```
+
+#### Méthode C : Docker Compose (développement local)
 
 > Cette méthode ne nécessite **pas** Minikube. Elle lance les conteneurs directement avec Docker.
 
 ```sh
+cd flopachat
 docker compose up --build
 ```
 
@@ -214,18 +217,13 @@ minikube addons enable metrics-server   # Requis pour le HPA
 
 ```sh
 eval $(minikube docker-env)
+cd flopachat
 ./build-images.sh
 ```
 
 ### 5. Déployer l'application
 
 Trois méthodes de déploiement sont disponibles. Choisir **une seule** :
-
-#### Méthode A : Manifestes Kubernetes (kubectl)
-
-```sh
-./deploy.sh
-```
 
 #### Méthode B : Terraform (Infrastructure as Code)
 
@@ -237,11 +235,19 @@ terraform apply      # Déploie toute l'infrastructure (répondre "yes")
 cd ..
 ```
 
+#### Méthode A : Manifestes Kubernetes (kubectl)
+
+```sh
+cd flopachat
+./deploy.sh
+```
+
 #### Méthode C : Docker Compose (développement rapide, sans Kubernetes)
 
 > Cette méthode ne nécessite **pas** Minikube. Elle lance les conteneurs directement avec Docker.
 
 ```sh
+cd flopachat
 docker compose up --build
 ```
 
@@ -343,21 +349,20 @@ Le serveur principal agit comme **proxy** pour les requêtes `/api/stats/*`, les
 
 ## Gestion des secrets
 
-Les secrets de l'application (MongoDB URI, JWT secret, clé Stripe) sont présents dans le dépôt Git sous deux formes :
+Attention, même si ce n'est pas une bonne pratique, les secrets de l'application (MongoDB URI, JWT secret, clé Stripe) sont versionnés sous deux formes :
 
 - **`k8s/k8s-secrets.yml`** : encodés en base64 (format standard des `kind: Secret` Kubernetes)
 - **`terraform/variables.tf`** : encodés en base64 dans les valeurs par défaut des variables, décodés au runtime via `base64decode()`
 
-**Pourquoi c'est acceptable ici :**
+**Justification :**
 
 | Point | Explication |
 |-------|-------------|
-| Base64 ≠ chiffrement | Le base64 est un encodage réversible, pas de la cryptographie. C'est le **fonctionnement standard** de Kubernetes Secrets. |
 | Clé Stripe en mode test | La clé `sk_test_...` ne peut pas débiter de vrais comptes bancaires. |
 | JWT secret arbitraire | Chaîne inventée pour le projet, pas un credential externe. |
 | MongoDB URI interne | `mongodb://mongo:27017` pointe sur un service interne au cluster, inaccessible depuis l'extérieur. |
 
-**En production, il faudrait utiliser :**
+**Pour de la prod, il faudrait utiliser par exemple :**
 
 | Solution | Description |
 |----------|-------------|
@@ -368,7 +373,7 @@ Les secrets de l'application (MongoDB URI, JWT secret, clé Stripe) sont présen
 
 Les mesures déjà en place dans le projet pour limiter l'exposition :
 - Les variables Terraform sont marquées `sensitive = true` (masquées dans les logs et le `terraform plan`)
-- Le `.gitignore` exclut `terraform.tfvars` (pour personnaliser les secrets sans les commiter)
+- Le `.gitignore` exclut `terraform.tfvars` (pour personnaliser les secrets sans les versionner)
 - Le fichier `terraform.tfvars.example` sert de template sans contenir de valeurs réelles
 
 ## Sécurisation du cluster
