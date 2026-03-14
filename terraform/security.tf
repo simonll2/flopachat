@@ -21,9 +21,9 @@ resource "kubernetes_secret" "app_secrets" {
   }
   type = "Opaque"
   data = {
-    MONGO_URI         = var.mongo_uri
-    JWT_SECRET        = var.jwt_secret
-    STRIPE_SECRET_KEY = var.stripe_secret_key
+    MONGO_URI         = base64decode(var.mongo_uri_b64)
+    JWT_SECRET        = base64decode(var.jwt_secret_b64)
+    STRIPE_SECRET_KEY = base64decode(var.stripe_secret_key_b64)
   }
 }
 
