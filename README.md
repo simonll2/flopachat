@@ -181,6 +181,11 @@ docker compose up --build
 
 L'application sera accessible sur [http://localhost:8080](http://localhost:8080).
 
+L'architecture Docker Compose reproduit le même routage que Kubernetes :
+- Un conteneur **gateway** (nginx reverse proxy) joue le rôle de l'Ingress
+- `/api` et `/static` sont routés vers le **server**
+- `/` est routé vers le **front**
+
 Pour arrêter :
 
 ```sh
@@ -191,16 +196,27 @@ docker compose down
 
 ## Déploiement alternatif : Terraform (Infrastructure as Code)
 
-Pour déployer via Terraform (nécessite Minikube démarré) :
+Pour déployer toute l'infrastructure via Terraform (nécessite Minikube démarré + Ingress + metrics-server activés) :
 
 ```sh
+# Prérequis
+minikube start --driver=docker
+minikube addons enable ingress
+minikube addons enable metrics-server
+eval $(minikube docker-env)
+./build-images.sh          # Build les images Docker localement
+
+# Déploiement Terraform
 cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Éditer terraform.tfvars avec vos valeurs (MongoDB URI, JWT secret, clé Stripe)
 terraform init
-terraform plan
-terraform apply
+terraform plan             # Aperçu de ce qui sera créé
+terraform apply            # Déploie toute l'infrastructure
 ```
+
+Terraform crée **toutes** les ressources Kubernetes en une seule commande :
+namespace, deployments, services, ingress (TLS), secrets, configmap, RBAC, network policies, resource quotas, HPA.
+
+> **Note** : les valeurs sensibles (MongoDB URI, JWT secret, clé Stripe) ont des valeurs par défaut fonctionnelles pour le mode développement. Pour les personnaliser : `cp terraform.tfvars.example terraform.tfvars` et éditer le fichier.
 
 Pour détruire l'infrastructure :
 
@@ -377,6 +393,9 @@ cd terraform && terraform init && terraform apply
 │   ├── front-deployment.yml   # Deployment frontend
 │   ├── front-service.yml      # Service frontend
 │   └── ingress.yml            # Ingress (TLS + routage path-based)
+├── nginx-proxy/               # Reverse proxy pour Docker Compose
+│   ├── Dockerfile             # Image nginx
+│   └── nginx.conf             # Routage /api → server, / → front
 ├── terraform/                 # Infrastructure as Code
 │   ├── main.tf                # Provider Kubernetes (Minikube)
 │   ├── variables.tf           # Variables paramétrables
@@ -385,7 +404,10 @@ cd terraform && terraform init && terraform apply
 │   ├── deployments.tf         # Deployments (mongo, server, stats, front)
 │   ├── services.tf            # Services Kubernetes
 │   ├── security.tf            # Secrets, ConfigMap, RBAC, NetworkPolicy, Quotas
-│   └── outputs.tf             # Outputs Terraform
+│   ├── ingress.tf             # TLS Secret + Ingress avec TLS
+│   ├── hpa.tf                 # HorizontalPodAutoscaler
+│   ├── outputs.tf             # Outputs Terraform
+│   └── certs/                 # Certificats TLS auto-signés (dev)
 ├── front/                     # Application Vue.js 3
 ├── server/                    # API Express.js principale
 └── stats-service/             # Microservice statistiques

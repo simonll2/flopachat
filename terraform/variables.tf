@@ -40,24 +40,25 @@ variable "server_static_storage_size" {
   default     = "500Mi"
 }
 
-# Sensitive variables — pass via terraform.tfvars or TF_VAR_ environment variables
-variable "mongo_uri" {
-  description = "MongoDB connection URI"
+# Sensitive variables stored as base64 (same format as k8s/k8s-secrets.yml)
+# Decoded at runtime by Terraform using base64decode()
+variable "mongo_uri_b64" {
+  description = "MongoDB connection URI (base64 encoded)"
   type        = string
-  default     = "mongodb://mongo:27017/flopachat"
+  default     = "bW9uZ29kYjovL21vbmdvOjI3MDE3L2Zsb3BhY2hhdA=="
   sensitive   = true
 }
 
-variable "jwt_secret" {
-  description = "JWT signing secret"
+variable "jwt_secret_b64" {
+  description = "JWT signing secret (base64 encoded)"
   type        = string
-  default     = "change-me-in-production"
+  default     = "anNvbndlYnRva2VuZXhwcmVzc2pzbW9uZ29kYnZ1ZWpzZ3JvdXBlN2JvdXRpcXVlZWxlY3Ryb25pcXVl"
   sensitive   = true
 }
 
-variable "stripe_secret_key" {
-  description = "Stripe secret key (test mode)"
+variable "stripe_secret_key_b64" {
+  description = "Stripe secret key, base64 encoded (test mode)"
   type        = string
-  default     = "change-me-in-production"
+  default     = "c2tfdGVzdF81MVBLOVo3RnVPdUVLTTBKbGZ6YlRCOWlOWmtoa3RKZTE4RWRZVEprUmZqcFJCR1liaDgza2RMNkxHcU9oWnRRTWdxZUp1UkZrMDlWMmZySkVkdGtQWTVRWTAwWTB3SUVYQkI="
   sensitive   = true
 }

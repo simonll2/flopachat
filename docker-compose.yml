@@ -4,8 +4,6 @@ services:
   mongo:
     image: mongo:7
     container_name: flopachat-mongo
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     networks:
@@ -19,8 +17,6 @@ services:
   server:
     build: ./server
     container_name: flopachat-server
-    ports:
-      - "5000:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/flopachat
       - JWT_SECRET=jsonwebtokenexpressjsmongodbvuejsgroupe7boutiquelectronique
@@ -39,8 +35,6 @@ services:
   stats-service:
     build: ./stats-service
     container_name: flopachat-stats
-    ports:
-      - "4000:4000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/flopachat
       - CORS_ORIGIN=http://localhost:8080
@@ -54,11 +48,22 @@ services:
   front:
     build: ./front
     container_name: flopachat-front
-    ports:
-      - "8080:80"
     depends_on:
       - server
       - stats-service
+    networks:
+      - flopachat-network
+
+  # Nginx reverse proxy — equivalent of Kubernetes Ingress
+  # Routes /api and /static to server, everything else to front
+  gateway:
+    build: ./nginx-proxy
+    container_name: flopachat-gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - front
+      - server
     networks:
       - flopachat-network
 

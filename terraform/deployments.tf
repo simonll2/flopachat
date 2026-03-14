@@ -19,10 +19,25 @@ resource "kubernetes_deployment" "mongo" {
       }
       spec {
         container {
-          name  = "mongo"
-          image = var.mongo_image
+          name              = "mongo"
+          image             = var.mongo_image
+          image_pull_policy = "IfNotPresent"
           port {
             container_port = 27017
+          }
+          readiness_probe {
+            exec {
+              command = ["mongosh", "--eval", "db.adminCommand('ping')"]
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
+          }
+          liveness_probe {
+            exec {
+              command = ["mongosh", "--eval", "db.adminCommand('ping')"]
+            }
+            initial_delay_seconds = 15
+            period_seconds        = 30
           }
           resources {
             requests = {
@@ -72,13 +87,15 @@ resource "kubernetes_deployment" "server" {
       spec {
         service_account_name = kubernetes_service_account.flopachat_sa.metadata[0].name
         init_container {
-          name    = "wait-for-mongo"
-          image   = "busybox"
-          command = ["sh", "-c", "until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done;"]
+          name              = "wait-for-mongo"
+          image             = "busybox"
+          image_pull_policy = "IfNotPresent"
+          command           = ["sh", "-c", "until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done;"]
         }
         container {
-          name  = "server"
-          image = var.server_image
+          name              = "server"
+          image             = var.server_image
+          image_pull_policy = "IfNotPresent"
           port {
             container_port = 5000
           }
@@ -91,6 +108,22 @@ resource "kubernetes_deployment" "server" {
             config_map_ref {
               name = kubernetes_config_map.app_config.metadata[0].name
             }
+          }
+          readiness_probe {
+            http_get {
+              path = "/health"
+              port = 5000
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
+          }
+          liveness_probe {
+            http_get {
+              path = "/health"
+              port = 5000
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 30
           }
           resources {
             requests = {
@@ -141,13 +174,15 @@ resource "kubernetes_deployment" "stats_service" {
       spec {
         service_account_name = kubernetes_service_account.flopachat_sa.metadata[0].name
         init_container {
-          name    = "wait-for-mongo"
-          image   = "busybox"
-          command = ["sh", "-c", "until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done;"]
+          name              = "wait-for-mongo"
+          image             = "busybox"
+          image_pull_policy = "IfNotPresent"
+          command           = ["sh", "-c", "until nc -z mongo 27017; do echo waiting for mongo; sleep 2; done;"]
         }
         container {
-          name  = "stats-service"
-          image = var.stats_image
+          name              = "stats-service"
+          image             = var.stats_image
+          image_pull_policy = "IfNotPresent"
           port {
             container_port = 4000
           }
@@ -160,6 +195,22 @@ resource "kubernetes_deployment" "stats_service" {
             config_map_ref {
               name = kubernetes_config_map.app_config.metadata[0].name
             }
+          }
+          readiness_probe {
+            http_get {
+              path = "/health"
+              port = 4000
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
+          }
+          liveness_probe {
+            http_get {
+              path = "/health"
+              port = 4000
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 30
           }
           resources {
             requests = {
@@ -200,10 +251,27 @@ resource "kubernetes_deployment" "front" {
       spec {
         service_account_name = kubernetes_service_account.flopachat_sa.metadata[0].name
         container {
-          name  = "front"
-          image = var.front_image
+          name              = "front"
+          image             = var.front_image
+          image_pull_policy = "IfNotPresent"
           port {
             container_port = 80
+          }
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 80
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
+          }
+          liveness_probe {
+            http_get {
+              path = "/"
+              port = 80
+            }
+            initial_delay_seconds = 10
+            period_seconds        = 30
           }
           resources {
             requests = {
