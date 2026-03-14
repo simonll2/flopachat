@@ -404,8 +404,7 @@ terraform/
 ├── security.tf       # Secrets, ConfigMap, RBAC, NetworkPolicies, Quotas
 ├── ingress.tf        # TLS Secret + Ingress
 ├── hpa.tf            # HorizontalPodAutoscaler
-├── outputs.tf        # Outputs de vérification
-└── certs/            # Certificats TLS auto-signés
+└── outputs.tf        # Outputs de vérification
 ```
 
 ### 7.2 Variables et paramétrisation

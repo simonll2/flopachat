@@ -512,8 +512,7 @@ kubectl get sa,role,rolebinding -n flopachat
 │   ├── security.tf            # Secrets, ConfigMap, RBAC, NetworkPolicy, Quotas
 │   ├── ingress.tf             # TLS Secret + Ingress avec TLS
 │   ├── hpa.tf                 # HorizontalPodAutoscaler
-│   ├── outputs.tf             # Outputs Terraform
-│   └── certs/                 # Certificats TLS auto-signés (dev)
+│   └── outputs.tf             # Outputs Terraform
 ├── front/                     # Application Vue.js 3
 ├── server/                    # API Express.js principale
 └── stats-service/             # Microservice statistiques
