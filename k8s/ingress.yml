@@ -3,8 +3,15 @@ kind: Ingress
 metadata:
   name: app-ingress
   namespace: flopachat
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - marketplace.local
+      secretName: tls-secret
   rules:
     - host: marketplace.local
       http:

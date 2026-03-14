@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is git-ignored for security
+
+mongo_uri         = "mongodb://mongo:27017/flopachat"
+jwt_secret        = "your-jwt-secret-here"
+stripe_secret_key = "sk_test_your_stripe_key_here"

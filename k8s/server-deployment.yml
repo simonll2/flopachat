@@ -13,6 +13,7 @@ spec:
       labels:
         app: server
     spec:
+      serviceAccountName: flopachat-sa
       initContainers:
         - name: wait-for-mongo
           image: busybox
@@ -26,9 +27,8 @@ spec:
           envFrom:
             - secretRef:
                 name: app-secrets
-          env:
-            - name: STATS_SERVICE_URL
-              value: "http://stats-service:4000"
+            - configMapRef:
+                name: app-config
           readinessProbe:
             httpGet:
               path: /health
