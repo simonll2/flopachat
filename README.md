@@ -1,6 +1,6 @@
 # Flopachat — Application E-Commerce sur Kubernetes
 
-Application e-commerce complète déployée sur Kubernetes (Minikube), avec architecture microservices, persistance des données, sécurisation avancée du cluster et Infrastructure as Code (Terraform).
+Application e-commerce déployée sur Kubernetes (Minikube), avec architecture microservices, persistance des données, sécurisation avancée du cluster et Infrastructure as Code (Terraform).
 
 ## Stack technique
 
@@ -158,7 +158,7 @@ echo "$(minikube ip) marketplace.local" | sudo tee -a /etc/hosts
 
 | Méthode | URL |
 |---------|-----|
-| A (kubectl) ou B (Terraform) | [http://marketplace.local](http://marketplace.local) |
+| A (Terraform) ou B (kubectl) | [http://marketplace.local](http://marketplace.local) |
 | C (Docker Compose) | [http://localhost:8080](http://localhost:8080) |
 
 **Compte admin par défaut :** `admin@admin.com` / `admin`
@@ -225,7 +225,7 @@ cd flopachat
 
 Trois méthodes de déploiement sont disponibles. Choisir **une seule** :
 
-#### Méthode B : Terraform (Infrastructure as Code)
+#### Méthode A : Terraform (Infrastructure as Code)
 
 ```sh
 cd terraform
@@ -235,7 +235,7 @@ terraform apply      # Déploie toute l'infrastructure (répondre "yes")
 cd ..
 ```
 
-#### Méthode A : Manifestes Kubernetes (kubectl)
+#### Méthode B : Manifestes Kubernetes (kubectl)
 
 ```sh
 cd flopachat
@@ -281,7 +281,7 @@ minikube tunnel
 
 | Méthode | URL |
 |---------|-----|
-| A (kubectl) ou B (Terraform) | [http://marketplace.local](http://marketplace.local) |
+| A (Terraform) ou B (kubectl) | [http://marketplace.local](http://marketplace.local) |
 | C (Docker Compose) | [http://localhost:8080](http://localhost:8080) |
 
 **Compte admin par défaut :** `admin@admin.com` / `admin`
@@ -292,17 +292,17 @@ minikube tunnel
 
 ## Nettoyage
 
-### Supprimer le déploiement Kubernetes (méthode A)
-
-```sh
-./cleanup.sh
-```
-
-### Supprimer le déploiement Terraform (méthode B)
+### Supprimer le déploiement Terraform (méthode A)
 
 ```sh
 cd terraform
 terraform destroy    # Répondre "yes"
+```
+
+### Supprimer le déploiement Kubernetes (méthode B)
+
+```sh
+./cleanup.sh
 ```
 
 ### Supprimer le déploiement Docker Compose (méthode C)
