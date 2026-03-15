@@ -45,7 +45,6 @@ export default {
     async processCheckout() {
       try {
         await this.checkout();
-        alert("Redirection vers le paiement...");
       } catch (error) {
         console.error("Échec de la validation du panier:", error);
       }

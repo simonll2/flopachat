@@ -97,7 +97,7 @@ const actions = {
         price: item.product.price * 100, // Convert to cents
       }));
       const session = await PaymentService.createCheckoutSession(items);
-      await PaymentService.redirectToCheckout(session.id);
+      PaymentService.redirectToCheckout(session.url);
     } catch (error) {
       console.error("Failed to create checkout session:", error);
     }

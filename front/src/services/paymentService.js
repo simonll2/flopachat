@@ -1,11 +1,6 @@
 // src/services/paymentService.js
 import axios from "axios";
 import { getToken } from "../utils/auth";
-import { loadStripe } from "@stripe/stripe-js";
-
-const stripePromise = loadStripe(
-  process.env.VUE_APP_STRIPE_PUBLIC_KEY || "pk_test_51PK9Z7FuOuEKM0JlpqImNwZDlSEVLgPIKmu4ug9iEBhmFlYy6daHz0seLnLX0GSvTjRjR35YOLu5ReEZLHpQGU9Y00YITkJNm9"
-);
 
 const API_URL = "/api";
 
@@ -24,9 +19,8 @@ class PaymentService {
     return response.data;
   }
 
-  async redirectToCheckout(sessionId) {
-    const stripe = await stripePromise;
-    await stripe.redirectToCheckout({ sessionId });
+  redirectToCheckout(sessionUrl) {
+    window.location.href = sessionUrl;
   }
 }
 

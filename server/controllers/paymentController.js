@@ -33,7 +33,7 @@ const createCheckoutSession = async (req, res) => {
       cancel_url: `${process.env.CORS_ORIGIN || 'http://marketplace.local'}/cancel`,
     });
 
-    res.json({ id: session.id });
+    res.json({ id: session.id, url: session.url });
   } catch (error) {
     console.error("Error creating Stripe checkout session:", error);
     res.status(500).json({ error: "Internal server error" });
