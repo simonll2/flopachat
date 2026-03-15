@@ -171,15 +171,80 @@ echo "$(minikube ip) marketplace.local" | sudo tee -a /etc/hosts
 
 > WSL2 utilise un réseau virtuel interne. `minikube ip` retourne une IP accessible uniquement depuis WSL, pas depuis le navigateur Windows. Il faut donc utiliser `minikube tunnel` pour les méthodes A et B.
 
+> **Docker natif dans WSL2** : cette section installe Docker Engine directement dans WSL2 (Ubuntu), sans passer par Docker Desktop. C'est l'approche recommandée pour un environnement purement Linux sans dépendance à une application Windows tierce.
+
 ### 1. Prérequis côté Windows
 
-- **WSL2** activé avec une distribution Ubuntu (22.04+)
-- **Docker Desktop** installé et configuré pour utiliser le backend WSL2
-  - Dans Docker Desktop : Settings → Resources → WSL Integration → activer pour votre distribution
+- **WSL2** activé avec une distribution Ubuntu (22.04 ou 24.04 recommandé)
+- Aucune dépendance à Docker Desktop
 
-### 2. Installer les dépendances dans WSL
+### 2. Activer systemd dans WSL2
 
-Ouvrir un terminal WSL (Ubuntu) :
+WSL2 nécessite `systemd` pour démarrer Docker automatiquement au lancement du terminal.
+
+Dans votre terminal WSL (Ubuntu), vérifier si systemd est déjà actif :
+
+```sh
+ps -p 1 -o comm=
+```
+
+Si la commande retourne `systemd`, c'est bon. Sinon, l'activer :
+
+```sh
+# Créer ou éditer /etc/wsl.conf
+sudo tee /etc/wsl.conf > /dev/null <<EOF
+[boot]
+systemd=true
+EOF
+```
+
+Puis redémarrer WSL **depuis PowerShell ou l'invite de commandes Windows** :
+
+```powershell
+wsl --shutdown
+```
+
+Rouvrir un terminal WSL. Vérifier :
+
+```sh
+ps -p 1 -o comm=   # doit afficher "systemd"
+```
+
+### 3. Installer Docker Engine nativement dans WSL2
+
+```sh
+# Supprimer d'éventuels anciens paquets conflictuels
+sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+# Ajouter le dépôt officiel Docker
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Installer Docker Engine
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Ajouter votre utilisateur au groupe docker (évite d'utiliser sudo)
+sudo usermod -aG docker $USER
+
+# Activer et démarrer le service Docker (via systemd)
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+> **Important :** après `usermod`, fermer et rouvrir le terminal WSL pour que le groupe `docker` soit pris en compte. Alternativement : `newgrp docker` dans le terminal courant.
+
+### 4. Installer les dépendances dans WSL
 
 ```sh
 # kubectl
@@ -199,13 +264,14 @@ sudo apt-get update && sudo apt-get install -y terraform
 Vérifier que tout est installé :
 
 ```sh
-docker --version      # Fourni par Docker Desktop via WSL integration
+docker --version      # Docker Engine natif (ex : Docker version 27.x.x)
+docker run hello-world  # Vérifie que le daemon tourne correctement
 kubectl version --client
 minikube version
 terraform -version
 ```
 
-### 3. Démarrer Minikube
+### 5. Démarrer Minikube
 
 ```sh
 minikube start --driver=docker
@@ -213,7 +279,7 @@ minikube addons enable ingress
 minikube addons enable metrics-server   # Requis pour le HPA
 ```
 
-### 4. Construire les images Docker
+### 6. Construire les images Docker
 
 ```sh
 eval $(minikube docker-env)
@@ -221,7 +287,7 @@ cd flopachat
 ./build-images.sh
 ```
 
-### 5. Déployer l'application
+### 7. Déployer l'application
 
 Trois méthodes de déploiement sont disponibles. Choisir **une seule** :
 
@@ -255,9 +321,9 @@ L'application sera accessible sur [http://localhost:8080](http://localhost:8080)
 
 Pour arrêter : `docker compose down`
 
-> **Note :** les étapes 6 et 7 ci-dessous ne s'appliquent **pas** à Docker Compose.
+> **Note :** les étapes 8 et 9 ci-dessous ne s'appliquent **pas** à Docker Compose.
 
-### 6. Lancer le tunnel (méthodes A et B uniquement)
+### 8. Lancer le tunnel (méthodes A et B uniquement)
 
 Dans un **second terminal WSL** (à laisser ouvert) :
 
@@ -267,7 +333,7 @@ minikube tunnel
 
 > Cela expose les services Ingress sur `127.0.0.1` dans WSL, qui est aussi accessible depuis Windows.
 
-### 7. Configurer l'accès (méthodes A et B uniquement)
+### 9. Configurer l'accès (méthodes A et B uniquement)
 
 Éditer le fichier hosts **côté Windows** (`C:\Windows\System32\drivers\etc\hosts`) en tant qu'administrateur et ajouter :
 
@@ -277,7 +343,7 @@ minikube tunnel
 
 > **Note :** avec `minikube tunnel`, l'IP est toujours `127.0.0.1`, pas celle retournée par `minikube ip`.
 
-### 8. Accéder à l'application
+### 10. Accéder à l'application
 
 | Méthode | URL |
 |---------|-----|
