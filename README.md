@@ -72,10 +72,12 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
-# Terraform
-wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt-get update && sudo apt-get install -y terraform
+# Terraform (via binaire officiel — compatible toutes versions Ubuntu)
+sudo apt-get install -y unzip curl
+TERRAFORM_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | grep -o '"current_version":"[^"]*"' | cut -d'"' -f4)
+curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip
+sudo unzip -o /tmp/terraform.zip -d /usr/local/bin/
+rm /tmp/terraform.zip
 ```
 
 Vérifier que tout est installé :
@@ -255,10 +257,12 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
-# Terraform
-wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt-get update && sudo apt-get install -y terraform
+# Terraform (via binaire officiel — compatible toutes versions Ubuntu)
+sudo apt-get install -y unzip curl
+TERRAFORM_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | grep -o '"current_version":"[^"]*"' | cut -d'"' -f4)
+curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip
+sudo unzip -o /tmp/terraform.zip -d /usr/local/bin/
+rm /tmp/terraform.zip
 ```
 
 Vérifier que tout est installé :
