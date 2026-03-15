@@ -1,7 +1,15 @@
 export default function persistState(store) {
   const storedState = localStorage.getItem("store");
   if (storedState) {
-    store.replaceState(Object.assign({}, store.state, JSON.parse(storedState)));
+    const parsedState = JSON.parse(storedState);
+    store.replaceState({
+      ...store.state,
+      ...parsedState,
+      auth: {
+        ...parsedState.auth,
+        token: store.state.auth.token, // Preserve token loaded from localStorage
+      },
+    });
   }
 
   store.subscribe((mutation, state) => {
